@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "actuosus-ai"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+torch = "^2.4.1"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.0"
+sqlalchemy = "^2.0.35"
+aiosqlite = "^0.20.0"
+numpy = "^2.1.2"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.5.2"
+transformers = "^4.45.2"
+httpx = "^0.27.2"
+psycopg2-binary = "^2.9.9"
+asyncpg = "^0.29.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+pytest-asyncio = "^0.24.0"
+coverage = "^7.6.1"
+mypy = "^1.11.2"
+ruff = "^0.6.9"
+pytest-mock = "^3.14.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
