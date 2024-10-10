@@ -12,4 +12,4 @@ mypy .
 
 # Run pytest
 echo "Running pytest..."
-pytest
+pytest --cov=your_package_name --cov-report=xml
