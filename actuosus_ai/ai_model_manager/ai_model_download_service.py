@@ -1,6 +1,4 @@
 import asyncio
-import os
-from typing import Optional
 
 from transformers import AutoModel, AutoTokenizer
 
@@ -10,24 +8,13 @@ from actuosus_ai.common.actuosus_exception import (
     NotFoundException,
     NetworkException,
 )
-from actuosus_ai.common.settings import Settings
 
 
 class AIModelDownloadService:
-    def __init__(
-        self, settings: Settings, language_model_service: LanguageModelService
-    ):
-        self.settings = settings
+    def __init__(self, language_model_service: LanguageModelService):
         self.language_model_service = language_model_service
 
-    async def download_lm_from_hugging_face(
-        self, model_name: str, storage_path: Optional[str] = None
-    ) -> None:
-        if not storage_path:
-            storage_path = os.path.join(
-                self.settings.base_file_storage_path, model_name
-            )
-
+    async def download_lm_from_hugging_face(self, model_name: str) -> None:
         try:
             loop = asyncio.get_running_loop()
             model, tokenizer = await asyncio.gather(
@@ -37,7 +24,7 @@ class AIModelDownloadService:
 
             # Save model and tokenizer to storage
             await self.language_model_service.add_new_model(
-                model_name, storage_path, model, tokenizer
+                model_name, model, tokenizer
             )
 
         except Exception as e:
