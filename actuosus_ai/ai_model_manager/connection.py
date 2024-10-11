@@ -13,11 +13,11 @@ async def get_async_db_session(
 ) -> AsyncGenerator[AsyncSession, None]:
     if not os.path.exists(settings.base_file_storage_path):
         os.makedirs(settings.base_file_storage_path)
-    async_engine = create_async_engine(settings.database_url, echo=True)
-    asyncSessionLocal = async_sessionmaker(
+    async_engine = create_async_engine(settings.database_url, echo=settings.debug_mode)
+    async_maker = async_sessionmaker(
         bind=async_engine, autocommit=False, autoflush=False, class_=AsyncSession
     )
     async with async_engine.begin() as conn:
         await conn.run_sync(BaseORM.metadata.create_all)
-    async with asyncSessionLocal() as session:
+    async with async_maker() as session:
         yield session

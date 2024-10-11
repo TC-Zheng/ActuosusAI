@@ -1,5 +1,7 @@
 import asyncio
+import os
 import shutil
+import uuid
 from typing import Optional, List
 
 from sqlalchemy import select
@@ -9,10 +11,12 @@ from transformers import PreTrainedModel, PreTrainedTokenizer
 from actuosus_ai.ai_model_manager.dto import LanguageModelDTO
 from actuosus_ai.ai_model_manager.orm import LanguageModelORM
 from actuosus_ai.common.actuosus_exception import InternalException
+from actuosus_ai.common.settings import Settings
 
 
 class LanguageModelService:
-    def __init__(self, async_session: AsyncSession):
+    def __init__(self, settings: Settings, async_session: AsyncSession):
+        self.settings = settings
         self.async_session = async_session
 
     @staticmethod
@@ -24,13 +28,12 @@ class LanguageModelService:
         return LanguageModelDTO(**orm.__dict__)
 
     async def add_new_model(
-        self,
-        name: str,
-        storage_path: str,
-        model: PreTrainedModel,
-        tokenizer: PreTrainedTokenizer,
+        self, name: str, model: PreTrainedModel, tokenizer: PreTrainedTokenizer
     ) -> None:
         try:
+            storage_path = os.path.join(
+                self.settings.base_file_storage_path, str(uuid.uuid4())
+            )
             # Save model and tokenizer to storage
             loop = asyncio.get_running_loop()
             temp_path = storage_path + "_temp"

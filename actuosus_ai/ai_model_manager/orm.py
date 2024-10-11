@@ -12,7 +12,7 @@ class BaseORM(DeclarativeBase):
 class LanguageModelORM(BaseORM):
     __tablename__ = "llm"
     lm_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(30), nullable=False)
     storage_path: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

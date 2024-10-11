@@ -80,28 +80,6 @@ class TestORM:
         assert "NOT NULL constraint failed: llm.name" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_duplicate_name_raise_error(self, session: AsyncSession) -> None:
-        # Arrange
-        llm = LanguageModelORM(
-            name="some name 1",
-            storage_path="some model path 1",
-        )
-        llm2 = LanguageModelORM(
-            name="some name 1",
-            storage_path="some model path 2",
-        )
-
-        # Act
-        session.add(llm)
-        await session.commit()
-        session.add(llm2)
-
-        # Assert
-        with pytest.raises(IntegrityError) as exc_info:
-            await session.commit()
-        assert "UNIQUE constraint failed: llm.name" in str(exc_info.value)
-
-    @pytest.mark.asyncio
     async def test_remove_llm(self, session: AsyncSession) -> None:
         # Arrange
         llm = LanguageModelORM(
