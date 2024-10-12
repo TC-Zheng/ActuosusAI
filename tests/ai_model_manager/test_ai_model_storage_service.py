@@ -52,8 +52,8 @@ class TestAIModelStorageService:
     async def test_add_new_model_success(
         self,
         mocked_move,
-        mocked_settings,
-        mocked_async_session,
+            mocked_settings,
+            mocked_async_session,
         mocked_model,
         mocked_tokenizer,
         example_create_model_dto,
@@ -234,8 +234,8 @@ class TestAIModelStorageService:
     async def test_update_model_fail_rollback(
         self,
         mock_rmtree,
-        mocker,
-        mocked_settings,
+            mocker,
+            mocked_settings,
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
@@ -297,3 +297,20 @@ class TestAIModelStorageService:
         # Act & Assert
         with pytest.raises(InternalException):
             await service.delete_model_by_id(lm_id)
+
+    @pytest.mark.asyncio
+    async def test_copy_model_by_id(self, mocked_settings, mocked_async_session, example_dto, mocker):
+        # Arrange
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
+        new_model_storage_path = f"{mocked_settings.base_file_storage_path}/new_uuid"
+
+        mocked_async_session.execute.return_value.scalar_one_or_none = mocker.AsyncMock(return_value=example_dto)
+
+        with patch('shutil.copytree') as mock_copytree, patch('uuid.uuid4', return_value='new_uuid'), patch.object(service, 'get_model_by_id', return_value=example_dto):
+            # Act
+            await service.copy_model_by_id(1)
+
+            # Assert
+            mocked_async_session.add.assert_called_once()
+            mocked_async_session.commit.assert_called_once()
+            mock_copytree.assert_called_once_with(example_dto.storage_path, new_model_storage_path)

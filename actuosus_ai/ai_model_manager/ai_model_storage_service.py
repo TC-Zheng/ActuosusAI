@@ -1,20 +1,25 @@
 import asyncio
 import copy
+import os
 import shutil
+import uuid
 from typing import Optional, List, Any
 
 from pydantic import BaseModel
 from sqlalchemy import select, asc, desc
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects.mysql import dialect as mysql_dialect
+from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from actuosus_ai.ai_model_manager.dto import AIModelDTO, CreateNewAIModelDTO
 from actuosus_ai.ai_model_manager.orm import AIModelORM
 from actuosus_ai.common.actuosus_exception import InternalException
+from actuosus_ai.common.settings import Settings
 
 
 class AIModelStorageService:
-    def __init__(self, async_session: AsyncSession):
+    def __init__(self, settings: Settings, async_session: AsyncSession):
+        self.settings = settings
         self.async_session = async_session
 
     @staticmethod
@@ -44,14 +49,18 @@ class AIModelStorageService:
     async def add_new_model(
         self, new_ai_model_dto: CreateNewAIModelDTO, *items: Any
     ) -> None:
-        temp_path = new_ai_model_dto.storage_path + "_temp"
+        storage_path = os.path.join(
+            self.settings.base_file_storage_path, str(uuid.uuid4())
+        )
+
+        temp_path = storage_path + "_temp"
 
         try:
             # Save model to database
-            self.async_session.add(self._dto_to_orm(new_ai_model_dto))
+            self.async_session.add(AIModelORM(name=new_ai_model_dto.name, storage_path=storage_path, pipeline_tag=new_ai_model_dto.pipeline_tag))
 
-            # Save model and required tokenizer, processor, etc to storage
-            await self._save_pretrained(items, new_ai_model_dto.storage_path, temp_path)
+            # Save model and required tokenizer, processor, etc. to storage
+            await self._save_pretrained(items, storage_path, temp_path)
 
         except Exception as e:
             # Rollback session and delete storage
@@ -112,9 +121,10 @@ class AIModelStorageService:
                 query = query.offset(offset)
 
             if name:
-                try:
+                # If the db is mysql or postgres, use match, otherwise use contains
+                if isinstance(self.async_session.bind.dialect, (mysql_dialect, postgresql_dialect)):
                     query = query.filter(AIModelORM.name.match(name))
-                except SQLAlchemyError:
+                else:
                     query = query.filter(AIModelORM.name.contains(name))
 
             if pipeline_tag:
@@ -145,12 +155,18 @@ class AIModelStorageService:
         except Exception as e:
             raise InternalException(str(e))
 
-    async def copy_model_by_id(self, lm_id: int, new_storage_path: str) -> None:
+    async def copy_model_by_id(self, ai_model_id: int) -> None:
         try:
-            model = await self.get_model_by_id(lm_id)
+            model = await self.get_model_by_id(ai_model_id)
             if model:
                 new_model = copy.copy(model)
                 new_model.ai_model_id = None
-                new_model.storage_path = new_storage_path
+                new_model.storage_path = os.path.join(self.settings.base_file_storage_path, str(uuid.uuid4()))
+                await asyncio.get_running_loop().run_in_executor(
+                    None, lambda: shutil.copytree(model.storage_path, new_model.storage_path)
+                )
+                self.async_session.add(self._dto_to_orm(new_model))
+                await self.async_session.commit()
+
         except Exception as e:
             raise InternalException(str(e))

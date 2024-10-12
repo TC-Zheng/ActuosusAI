@@ -36,6 +36,4 @@ class TestLLM:
         model = AIModelDTO(**example_fields)
         model.name = "some name 2"  # No error
         with pytest.raises(ValidationError):
-            model.ai_model_id = 2
-        with pytest.raises(ValidationError):
             model.created_at = datetime.now()

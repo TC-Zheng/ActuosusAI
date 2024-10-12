@@ -9,7 +9,7 @@ from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorage
 from actuosus_ai.common.settings import get_settings, Settings
 
 
-def get_ai_model_service(
+def get_ai_model_storage_service(
     settings: Settings = Depends(get_settings),
     async_session: AsyncSession = Depends(get_async_db_session),
 ) -> AIModelStorageService:
@@ -17,6 +17,6 @@ def get_ai_model_service(
 
 
 def get_ai_download_service(
-    ai_model_storage_service: AIModelStorageService = Depends(get_ai_model_service),
+    ai_model_storage_service: AIModelStorageService = Depends(get_ai_model_storage_service),
 ) -> AIModelDownloadService:
     return AIModelDownloadService(ai_model_storage_service)

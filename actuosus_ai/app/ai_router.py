@@ -7,11 +7,17 @@ from actuosus_ai.ai_model_manager.ai_model_download_service import (
 )
 from actuosus_ai.ai_model_manager.dto import AIModelDTO
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
-from actuosus_ai.app.dependency import get_ai_download_service, get_ai_model_service
+from actuosus_ai.app.dependency import get_ai_download_service, get_ai_model_storage_service
 from pydantic import BaseModel
 
 router = APIRouter()
 
+class SingleModelIdRequest(BaseModel):
+    ai_model_id: int
+
+class StandardResponse(BaseModel):
+    success: bool
+    message: str
 
 class DownloadHFModelRequest(BaseModel):
     hf_model_id: str
@@ -28,28 +34,65 @@ async def download_ai_model(
     download_ai_model_service: AIModelDownloadService = Depends(
         get_ai_download_service
     ),
-) -> DownloadHFModelResponse:
+) -> StandardResponse:
     """
     Download a Language Model based on it's name (id)
     """
     await download_ai_model_service.download_lm_from_hugging_face(request.hf_model_id)
 
-    return DownloadHFModelResponse(
+    return StandardResponse(
         success=True, message="Model downloaded successfully"
     )
 
+@router.post("/copy_model/")
+async def copy_model(
+    request: SingleModelIdRequest,
+    language_model_service: AIModelStorageService = Depends(get_ai_model_storage_service),
+) -> StandardResponse:
+    """
+    Copy a model based on it's id
+    """
+    await language_model_service.copy_model_by_id(request.ai_model_id)
 
-class GetModelRequest(BaseModel):
-    limit: Optional[int] = None
+    return StandardResponse(success=True, message="Model copied successfully")
+
+class EditModelNameRequest(BaseModel):
+    ai_model_id: int
+    new_name: str
+@router.post("/edit_model_name/")
+async def edit_model_name(
+    request: EditModelNameRequest,
+    language_model_service: AIModelStorageService = Depends(get_ai_model_storage_service),
+) -> StandardResponse:
+    """
+    Edit a model's name based on it's id
+    """
+    dto = await language_model_service.get_model_by_id(request.ai_model_id)
+    dto.name = request.new_name
+    await language_model_service.update_model(dto)
+
+    return StandardResponse(success=True, message="Model name edited successfully")
+
+
+
 
 
 class GetModelResponse(BaseModel):
     models: List[AIModelDTO]
 
-
-@router.get("models")
+@router.get("/get_models/")
 async def get_models(
-    request: GetModelRequest,
-    language_model_service: AIModelStorageService = Depends(get_ai_model_service),
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    name: Optional[str] = None,
+    pipeline_tag: Optional[str] = None,
+    order_by: Optional[str] = None,
+    is_desc: Optional[bool] = True,
+    language_model_service: AIModelStorageService = Depends(get_ai_model_storage_service),
 ) -> GetModelResponse:
-    return {"models": "models"}
+    """
+    Get all models
+    """
+    dtos = await language_model_service.get_models(limit, offset, name, pipeline_tag, order_by, is_desc)
+
+    return GetModelResponse(models=dtos)
