@@ -1,8 +1,9 @@
 import type { Config } from "tailwindcss";
+import colors from "tailwindcss/colors";
 
 const config: {
-  plugins: any[];
-  theme: { extend: { colors: { background: string; foreground: string } } };
+  plugins: unknown[];
+  theme: { extend: { colors: {primary: unknown, secondary: unknown, background: unknown, error: unknown, accent: unknown} } };
   content: string[]
 } = {
   content: [
@@ -13,8 +14,13 @@ const config: {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        // example
+        // text-primary-500, bg-background-900, text-error-500, border-primary-500
+        primary: colors.slate,
+        secondary: colors.sky,
+        background: colors.neutral,
+        error: colors.red,
+        accent: colors.amber,
       },
     },
   },

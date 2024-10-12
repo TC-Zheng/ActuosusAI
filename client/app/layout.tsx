@@ -1,17 +1,7 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./styles/globals.css";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import RootHeader from "@/app/components/RootHeader";
+import {ToastContainer} from "react-toastify";
 
 export const metadata: Metadata = {
   title: "ActuosusAI",
@@ -24,11 +14,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="text-2xl h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`antialiased h-full bg-background-800 text-primary-200`}
       >
-        {children}
+      <RootHeader />
+      <ToastContainer />
+      <main>{children}</main>
       </body>
     </html>
   );
