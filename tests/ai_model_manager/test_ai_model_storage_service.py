@@ -3,12 +3,13 @@ from unittest.mock import patch
 
 import pytest
 
-from actuosus_ai.ai_model_manager.dto import LanguageModelDTO
-from actuosus_ai.ai_model_manager.language_model_service import LanguageModelService
+from actuosus_ai.ai_model_manager.dto import AIModelDTO, CreateNewAIModelDTO
+from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
+from actuosus_ai.ai_model_manager.orm import AIModelORM
 from actuosus_ai.common.actuosus_exception import InternalException
 
 
-class TestLanguageModelService:
+class TestAIModelStorageService:
     @pytest.fixture
     def mocked_settings(self, mocker):
         mock = mocker.MagicMock()
@@ -27,6 +28,25 @@ class TestLanguageModelService:
     def mocked_tokenizer(self, mocker):
         return mocker.MagicMock()
 
+    @pytest.fixture
+    def example_dto(self):
+        return AIModelDTO(
+            ai_model_id=1,
+            name="some name 1",
+            storage_path="some storage path 1",
+            pipeline_tag="some pipeline tag 1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+
+    @pytest.fixture
+    def example_create_model_dto(self):
+        return CreateNewAIModelDTO(
+            name="some name 1",
+            storage_path="some storage path 1",
+            pipeline_tag="some pipeline tag 1",
+        )
+
     @pytest.mark.asyncio
     @patch("shutil.move")
     async def test_add_new_model_success(
@@ -36,13 +56,15 @@ class TestLanguageModelService:
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
+        example_create_model_dto,
     ):
         # Arrange
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-        name = "some name 1"
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
-        await service.add_new_model(name, mocked_model, mocked_tokenizer)
+        await service.add_new_model(
+            example_create_model_dto, mocked_model, mocked_tokenizer
+        )
 
         # Assert
         assert mocked_async_session.add.call_count == 1
@@ -62,19 +84,13 @@ class TestLanguageModelService:
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
+        example_dto,
     ):
         # Arrange
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-        dto = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
-        await service.update_model(dto, mocked_model, mocked_tokenizer)
+        await service.update_model(example_dto, mocked_model, mocked_tokenizer)
 
         # Assert
         mocked_async_session.merge.assert_called_once()
@@ -90,93 +106,60 @@ class TestLanguageModelService:
 
     @pytest.mark.asyncio
     async def test_get_model_by_id_success(
-        self, mocker, mocked_settings, mocked_async_session
+        self, mocker, mocked_settings, mocked_async_session, example_dto
     ):
         # Arrange
-        dto = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
         mocked_result = mocker.MagicMock()
         mocked_async_session.execute.return_value = mocked_result
-        mocked_result.scalar_one_or_none.return_value = dto
-        service = LanguageModelService(mocked_settings, mocked_async_session)
+        mocked_result.scalar_one_or_none.return_value = example_dto
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
 
         # Act
         model_dto = await service.get_model_by_id(lm_id)
 
         # Assert
-        assert model_dto == dto
+        assert model_dto == example_dto
 
     @pytest.mark.asyncio
     async def test_get_models_success(
         self, mocker, mocked_settings, mocked_async_session
     ):
         # Arrange
-        dto = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
+        mock_orm_instance = AIModelORM(
+            ai_model_id=1,
+            name="test_model",
+            pipeline_tag="test_tag",
+            storage_path="test_path",
             created_at=datetime.now(),
             updated_at=datetime.now(),
         )
         mocked_result = mocker.MagicMock()
+        mocked_result.scalars.return_value = [mock_orm_instance]
         mocked_async_session.execute.return_value = mocked_result
-        mocked_result.scalars.return_value = [dto]
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-        limit = 1
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
-        model_dto = await service.get_models(limit)
+        result = await service.get_models()
 
         # Assert
-        assert model_dto == [dto]
-
-    @pytest.mark.asyncio
-    async def test_get_all_models_success(
-        self, mocker, mocked_settings, mocked_async_session
-    ):
-        # Arrange
-        dto = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
-        mocked_result = mocker.MagicMock()
-        mocked_async_session.execute.return_value = mocked_result
-        mocked_result.scalars.return_value = [dto]
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-
-        # Act
-        model_dto = await service.get_all_models()
-
-        # Assert
-        assert model_dto == [dto]
+        mocked_async_session.execute.assert_called_once()
+        assert len(result) == 1
+        assert isinstance(result[0], AIModelDTO)
+        assert result[0].name == "test_model"
+        assert result[0].pipeline_tag == "test_tag"
 
     @pytest.mark.asyncio
     @patch("shutil.rmtree")
     async def test_delete_model_success(
-        self, mock_rmtree, mocked_settings, mocked_async_session
+        self, mock_rmtree, mocked_settings, mocked_async_session, example_dto
     ):
         # Arrange
-        dto = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
-        service = LanguageModelService(mocked_settings, mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
 
         # Act
-        with patch.object(service, "get_model_by_id", return_value=dto):
+        with patch.object(service, "get_model_by_id", return_value=example_dto):
             await service.delete_model_by_id(lm_id)
 
         # Assert
@@ -196,17 +179,19 @@ class TestLanguageModelService:
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
+        example_create_model_dto,
     ):
         # Arrange
         mocked_async_session.add = mocker.MagicMock(
             side_effect=Exception("This is a test exception")
         )
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-        name = "some name 1"
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         with pytest.raises(InternalException):
-            await service.add_new_model(name, mocked_model, mocked_tokenizer)
+            await service.add_new_model(
+                example_create_model_dto, mocked_model, mocked_tokenizer
+            )
 
         # Assert
         mocked_async_session.rollback.assert_called_once()
@@ -225,17 +210,19 @@ class TestLanguageModelService:
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
+        example_create_model_dto,
     ):
         # Arrange
         mocked_model.save_pretrained = mocker.MagicMock(
             side_effect=Exception("This is a test exception")
         )
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-        name = "some name 1"
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         with pytest.raises(InternalException):
-            await service.add_new_model(name, mocked_model, mocked_tokenizer)
+            await service.add_new_model(
+                example_create_model_dto, mocked_model, mocked_tokenizer
+            )
 
         # Assert
         mocked_async_session.rollback.assert_called_once()
@@ -252,23 +239,17 @@ class TestLanguageModelService:
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
+        example_dto,
     ):
         # Arrange
         mocked_async_session.merge = mocker.MagicMock(
             side_effect=Exception("This is a test exception")
         )
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-        dto = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         with pytest.raises(InternalException):
-            await service.update_model(dto, mocked_model, mocked_tokenizer)
+            await service.update_model(example_dto, mocked_model, mocked_tokenizer)
 
         # Assert
         mocked_async_session.rollback.assert_called_once()
@@ -282,7 +263,7 @@ class TestLanguageModelService:
     ):
         # Arrange
         mocked_async_session.execute.side_effect = Exception("Test exception")
-        service = LanguageModelService(mocked_settings, mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
 
         # Act & Assert
@@ -295,7 +276,7 @@ class TestLanguageModelService:
     ):
         # Arrange
         mocked_async_session.execute.side_effect = Exception("Test exception")
-        service = LanguageModelService(mocked_settings, mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         limit = 1
 
         # Act & Assert
@@ -303,23 +284,11 @@ class TestLanguageModelService:
             await service.get_models(limit)
 
     @pytest.mark.asyncio
-    async def test_get_all_models_throws_internal_exception(
-        self, mocked_settings, mocked_async_session
-    ):
-        # Arrange
-        mocked_async_session.execute.side_effect = Exception("Test exception")
-        service = LanguageModelService(mocked_settings, mocked_async_session)
-
-        # Act & Assert
-        with pytest.raises(InternalException):
-            await service.get_all_models()
-
-    @pytest.mark.asyncio
     async def test_delete_model_by_id_throws_internal_exception(
         self, mocker, mocked_settings, mocked_async_session
     ):
         # Arrange
-        service = LanguageModelService(mocked_settings, mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
         mocker.patch.object(
             service, "get_model_by_id", side_effect=Exception("Test exception")
@@ -328,3 +297,28 @@ class TestLanguageModelService:
         # Act & Assert
         with pytest.raises(InternalException):
             await service.delete_model_by_id(lm_id)
+
+    @pytest.mark.asyncio
+    async def test_copy_model_by_id(
+        self, mocked_settings, mocked_async_session, example_dto, mocker
+    ):
+        # Arrange
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
+        new_model_storage_path = f"{mocked_settings.base_file_storage_path}/new_uuid"
+
+        mocked_async_session.execute.return_value.scalar_one_or_none = mocker.AsyncMock(
+            return_value=example_dto
+        )
+
+        with patch("shutil.copytree") as mock_copytree, patch(
+            "uuid.uuid4", return_value="new_uuid"
+        ), patch.object(service, "get_model_by_id", return_value=example_dto):
+            # Act
+            await service.copy_model_by_id(1)
+
+            # Assert
+            mocked_async_session.add.assert_called_once()
+            mocked_async_session.commit.assert_called_once()
+            mock_copytree.assert_called_once_with(
+                example_dto.storage_path, new_model_storage_path
+            )

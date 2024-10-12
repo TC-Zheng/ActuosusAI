@@ -3,49 +3,37 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from actuosus_ai.ai_model_manager.dto import LanguageModelDTO
+from actuosus_ai.ai_model_manager.dto import AIModelDTO
 
 
 class TestLLM:
-    def test_create_new_llm_success(self):
-        llm = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
-        assert llm.name == "some name 1"
+    @pytest.fixture
+    def example_fields(self):
+        return {
+            "ai_model_id": 1,
+            "name": "some name 1",
+            "storage_path": "some storage path 1",
+            "pipeline_tag": "some pipeline tag 1",
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+        }
 
-    def test_create_new_llm_with_missing_fields_error(self):
-        with pytest.raises(ValidationError):
-            LanguageModelDTO(
-                lm_id=1,
-                name="some name 1",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-            )
+    def test_create_new_model_success(self, example_fields):
+        model = AIModelDTO(**example_fields)
+        assert model.name == "some name 1"
 
-    def test_create_new_llm_with_empty_name_error(self):
+    def test_create_new_model_with_missing_fields_error(self, example_fields):
+        del example_fields["name"]
         with pytest.raises(ValidationError):
-            LanguageModelDTO(
-                lm_id=1,
-                name="",
-                storage_path="some storage path 1",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-            )
+            AIModelDTO(**example_fields)
 
-    def test_immutable_fields_error(self):
-        llm = LanguageModelDTO(
-            lm_id=1,
-            name="some name 1",
-            storage_path="some storage path 1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
-        llm.name = "some name 2"  # No error
+    def test_create_new_model_with_empty_name_error(self, example_fields):
+        example_fields["name"] = ""
         with pytest.raises(ValidationError):
-            llm.lm_id = 2
+            AIModelDTO(**example_fields)
+
+    def test_immutable_fields_error(self, example_fields):
+        model = AIModelDTO(**example_fields)
+        model.name = "some name 2"  # No error
         with pytest.raises(ValidationError):
-            llm.created_at = datetime.now()
+            model.created_at = datetime.now()
