@@ -10,11 +10,11 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
-from actuosus_ai.ai_model_manager.orm import BaseORM, LanguageModelORM
+from actuosus_ai.ai_model_manager.orm import BaseORM, AIModelORM
 
 
 class TestORM:
-    @pytest_asyncio.fixture()
+    @pytest_asyncio.fixture
     async def async_engine(self) -> AsyncGenerator[AsyncEngine, None]:
         async_engine = create_async_engine("sqlite+aiosqlite://", echo=True)
         yield async_engine
@@ -30,86 +30,111 @@ class TestORM:
         async with async_session_maker() as session:
             yield session
 
-    @pytest.mark.asyncio
-    async def test_save_llm(self, session: AsyncSession) -> None:
-        # Arrange
-        llm = LanguageModelORM(
+    @pytest.fixture
+    def example_ai_model(self) -> AIModelORM:
+        return AIModelORM(
             name="some name 1",
             storage_path="some model path 1",
+            pipeline_tag="some pipeline tag 1",
         )
 
+    @pytest.mark.asyncio
+    async def test_save_llm(self, session: AsyncSession, example_ai_model) -> None:
+        # Arrange
+
         # Act
-        session.add(llm)
+        session.add(example_ai_model)
         await session.commit()
 
         # Assert
-        assert llm.id is not None
-        saved_llm = await session.get(LanguageModelORM, llm.id)
-        assert saved_llm is not None
-        assert saved_llm.name == "some name 1"
+        assert example_ai_model.id is not None
+        saved_ai_model = await session.get(AIModelORM, example_ai_model.id)
+        assert saved_ai_model is not None
+        assert saved_ai_model.name == "some name 1"
 
     @pytest.mark.asyncio
-    async def test_date_created_updated(self, session: AsyncSession) -> None:
+    async def test_date_created_updated(
+        self, session: AsyncSession, example_ai_model
+    ) -> None:
         # Arrange
-        llm = LanguageModelORM(
-            name="some name 1",
-            storage_path="some model path 1",
-        )
 
         # Act
-        session.add(llm)
+        session.add(example_ai_model)
         await session.commit()
 
         # Assert
-        assert llm.created_at is not None
-        assert llm.updated_at is not None
+        assert example_ai_model.created_at is not None
+        assert example_ai_model.updated_at is not None
 
     @pytest.mark.asyncio
-    async def test_missing_name_raise_error(self, session: AsyncSession) -> None:
+    async def test_missing_name_raise_error(
+        self, session: AsyncSession, example_ai_model
+    ) -> None:
         # Arrange
-        llm = LanguageModelORM(
-            storage_path="some model path 1",
-        )
+        example_ai_model.name = None
 
+        print(example_ai_model)
         # Act
-        session.add(llm)
+        session.add(example_ai_model)
 
         # Assert
         with pytest.raises(IntegrityError) as exc_info:
             await session.commit()
-        assert "NOT NULL constraint failed: llm.name" in str(exc_info.value)
+        assert "NOT NULL constraint failed" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_remove_llm(self, session: AsyncSession) -> None:
+    async def test_missing_storage_path_raise_error(
+        self, session: AsyncSession, example_ai_model
+    ) -> None:
         # Arrange
-        llm = LanguageModelORM(
-            name="some name 1",
-            storage_path="some model path 1",
-        )
-        session.add(llm)
+        example_ai_model.storage_path = None
+
+        # Act
+        session.add(example_ai_model)
+
+        # Assert
+        with pytest.raises(IntegrityError) as exc_info:
+            await session.commit()
+        assert "NOT NULL constraint failed" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_missing_pipeline_tag_raise_error(
+        self, session: AsyncSession, example_ai_model
+    ) -> None:
+        # Arrange
+        example_ai_model.pipeline_tag = None
+
+        # Act
+        session.add(example_ai_model)
+
+        # Assert
+        with pytest.raises(IntegrityError) as exc_info:
+            await session.commit()
+        assert "NOT NULL constraint failed" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_remove_llm(self, session: AsyncSession, example_ai_model) -> None:
+        # Arrange
+        session.add(example_ai_model)
         await session.commit()
 
         # Act
-        await session.delete(llm)
+        await session.delete(example_ai_model)
         await session.commit()
 
         # Assert
-        assert await session.get(LanguageModelORM, llm.id) is None
+        assert await session.get(AIModelORM, example_ai_model.id) is None
 
     @pytest.mark.asyncio
-    async def test_update_llm(self, session: AsyncSession) -> None:
+    async def test_update_llm(self, session: AsyncSession, example_ai_model) -> None:
         # Arrange
-        llm = LanguageModelORM(
-            name="some name 1",
-            storage_path="some model path 1",
-        )
-        session.add(llm)
+        session.add(example_ai_model)
         await session.commit()
 
         # Act
-        llm.name = "new name"
+        example_ai_model.name = "new name"
         await session.commit()
 
         # Assert
-        updated_llm = await session.get(LanguageModelORM, llm.id)
-        assert updated_llm.name == "new name"
+        updated_ai_model = await session.get(AIModelORM, example_ai_model.id)
+        assert updated_ai_model.name == "new name"
