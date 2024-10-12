@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str
     base_file_storage_path: str
+    debug_mode: bool
 
     class Config:
         env_file = ".env"

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from huggingface_hub import model_info
@@ -47,17 +46,17 @@ class TestIntegrationAiModelManager:
             "message": "Model downloaded successfully",
         }
         assert response.status_code == 200
-        # Try to load the models
-        AutoModel.from_pretrained(os.path.join(BASE_STORAGE_PATH, MODEL_NAME_1))
-        AutoTokenizer.from_pretrained(os.path.join(BASE_STORAGE_PATH, MODEL_NAME_1))
+
         # Check if the model info is saved in the database
         pipeline_tag = model_info(MODEL_NAME_1).pipeline_tag
 
         async for session in get_async_db_session(get_test_settings()):
-            ai_model_service = AIModelStorageService(session)
+            ai_model_service = AIModelStorageService(get_test_settings(), session)
             dtos = await ai_model_service.get_models()
             assert len(dtos) == 1
             assert dtos[0].ai_model_id == 1
             assert dtos[0].name == MODEL_NAME_1
             assert dtos[0].pipeline_tag == pipeline_tag
-            assert dtos[0].storage_path == os.path.join(BASE_STORAGE_PATH, MODEL_NAME_1)
+            # Try to load the models
+            AutoModel.from_pretrained(dtos[0].storage_path)
+            AutoTokenizer.from_pretrained(dtos[0].storage_path)

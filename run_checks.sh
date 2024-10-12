@@ -1,6 +1,6 @@
 # Run ruff check
 echo "Running ruff check..."
-ruff check --fix
+ruff check
 
 # Run ruff format
 echo "Running ruff format..."

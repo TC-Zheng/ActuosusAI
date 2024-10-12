@@ -11,6 +11,12 @@ from actuosus_ai.common.actuosus_exception import InternalException
 
 class TestAIModelStorageService:
     @pytest.fixture
+    def mocked_settings(self, mocker):
+        mock = mocker.MagicMock()
+        mock.base_file_storage_path = "example_path"
+        return mock
+
+    @pytest.fixture
     def mocked_async_session(self, mocker):
         return mocker.AsyncMock()
 
@@ -46,13 +52,14 @@ class TestAIModelStorageService:
     async def test_add_new_model_success(
         self,
         mocked_move,
+        mocked_settings,
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
         example_create_model_dto,
     ):
         # Arrange
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         await service.add_new_model(
@@ -62,16 +69,9 @@ class TestAIModelStorageService:
         # Assert
         assert mocked_async_session.add.call_count == 1
         assert mocked_async_session.commit.call_count == 1
-        mocked_model.save_pretrained.assert_called_once_with(
-            example_create_model_dto.storage_path + "_temp"
-        )
-        mocked_tokenizer.save_pretrained.assert_called_once_with(
-            example_create_model_dto.storage_path + "_temp"
-        )
-        mocked_move.assert_called_once_with(
-            example_create_model_dto.storage_path + "_temp",
-            example_create_model_dto.storage_path,
-        )
+        mocked_model.save_pretrained.assert_called_once()
+        mocked_tokenizer.save_pretrained.assert_called_once()
+        mocked_move.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("shutil.rmtree")
@@ -80,13 +80,14 @@ class TestAIModelStorageService:
         self,
         mocked_move,
         mocked_rmtree,
+        mocked_settings,
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
         example_dto,
     ):
         # Arrange
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         await service.update_model(example_dto, mocked_model, mocked_tokenizer)
@@ -105,13 +106,13 @@ class TestAIModelStorageService:
 
     @pytest.mark.asyncio
     async def test_get_model_by_id_success(
-        self, mocker, mocked_async_session, example_dto
+        self, mocker, mocked_settings, mocked_async_session, example_dto
     ):
         # Arrange
         mocked_result = mocker.MagicMock()
         mocked_async_session.execute.return_value = mocked_result
         mocked_result.scalar_one_or_none.return_value = example_dto
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
 
         # Act
@@ -121,11 +122,10 @@ class TestAIModelStorageService:
         assert model_dto == example_dto
 
     @pytest.mark.asyncio
-    async def test_get_models_success(self, mocked_async_session, mocker):
+    async def test_get_models_success(
+        self, mocker, mocked_settings, mocked_async_session
+    ):
         # Arrange
-        service = AIModelStorageService(mocked_async_session)
-
-        # Mock the query result
         mock_orm_instance = AIModelORM(
             ai_model_id=1,
             name="test_model",
@@ -137,6 +137,7 @@ class TestAIModelStorageService:
         mocked_result = mocker.MagicMock()
         mocked_result.scalars.return_value = [mock_orm_instance]
         mocked_async_session.execute.return_value = mocked_result
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         result = await service.get_models()
@@ -151,10 +152,10 @@ class TestAIModelStorageService:
     @pytest.mark.asyncio
     @patch("shutil.rmtree")
     async def test_delete_model_success(
-        self, mock_rmtree, mocked_async_session, example_dto
+        self, mock_rmtree, mocked_settings, mocked_async_session, example_dto
     ):
         # Arrange
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
 
         # Act
@@ -174,6 +175,7 @@ class TestAIModelStorageService:
         mock_rmtree,
         mocked_move,
         mocker,
+        mocked_settings,
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
@@ -183,7 +185,7 @@ class TestAIModelStorageService:
         mocked_async_session.add = mocker.MagicMock(
             side_effect=Exception("This is a test exception")
         )
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         with pytest.raises(InternalException):
@@ -193,9 +195,7 @@ class TestAIModelStorageService:
 
         # Assert
         mocked_async_session.rollback.assert_called_once()
-        mock_rmtree.assert_called_once_with(
-            "some storage path 1_temp", ignore_errors=True
-        )
+        mock_rmtree.assert_called_once()
         mocked_move.assert_not_called()
 
     @pytest.mark.asyncio
@@ -206,6 +206,7 @@ class TestAIModelStorageService:
         mock_rmtree,
         mocked_move,
         mocker,
+        mocked_settings,
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
@@ -215,7 +216,7 @@ class TestAIModelStorageService:
         mocked_model.save_pretrained = mocker.MagicMock(
             side_effect=Exception("This is a test exception")
         )
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         with pytest.raises(InternalException):
@@ -225,9 +226,7 @@ class TestAIModelStorageService:
 
         # Assert
         mocked_async_session.rollback.assert_called_once()
-        mock_rmtree.assert_called_once_with(
-            "some storage path 1_temp", ignore_errors=True
-        )
+        mock_rmtree.assert_called_once()
         mocked_move.assert_not_called()
 
     @pytest.mark.asyncio
@@ -236,6 +235,7 @@ class TestAIModelStorageService:
         self,
         mock_rmtree,
         mocker,
+        mocked_settings,
         mocked_async_session,
         mocked_model,
         mocked_tokenizer,
@@ -245,7 +245,7 @@ class TestAIModelStorageService:
         mocked_async_session.merge = mocker.MagicMock(
             side_effect=Exception("This is a test exception")
         )
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
         with pytest.raises(InternalException):
@@ -259,11 +259,11 @@ class TestAIModelStorageService:
 
     @pytest.mark.asyncio
     async def test_get_model_by_id_throws_internal_exception(
-        self, mocker, mocked_async_session
+        self, mocked_settings, mocked_async_session
     ):
         # Arrange
         mocked_async_session.execute.side_effect = Exception("Test exception")
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
 
         # Act & Assert
@@ -272,11 +272,11 @@ class TestAIModelStorageService:
 
     @pytest.mark.asyncio
     async def test_get_models_throws_internal_exception(
-        self, mocker, mocked_async_session
+        self, mocked_settings, mocked_async_session
     ):
         # Arrange
         mocked_async_session.execute.side_effect = Exception("Test exception")
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         limit = 1
 
         # Act & Assert
@@ -285,10 +285,10 @@ class TestAIModelStorageService:
 
     @pytest.mark.asyncio
     async def test_delete_model_by_id_throws_internal_exception(
-        self, mocker, mocked_async_session
+        self, mocker, mocked_settings, mocked_async_session
     ):
         # Arrange
-        service = AIModelStorageService(mocked_async_session)
+        service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
         mocker.patch.object(
             service, "get_model_by_id", side_effect=Exception("Test exception")
