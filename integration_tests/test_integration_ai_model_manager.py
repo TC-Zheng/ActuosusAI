@@ -11,12 +11,13 @@ import pytest
 from transformers import AutoModel, AutoTokenizer
 
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
-from integration_tests.integration_test_settings import get_test_settings
+from integration_tests.conftest import get_test_settings
 
 DB_URL = "test.db"
 BASE_STORAGE_PATH = "test"
 MODEL_NAME_1 = "dslim/distilbert-NER"
 MODEL_PIPELINE_TAG_1 = "token-classification"
+
 
 class TestIntegrationAiModelManager:
     @classmethod
@@ -42,7 +43,9 @@ class TestIntegrationAiModelManager:
 
     # Test by downloading a small bert model from hugging face then try to load it and check if it is saved in the database
     @pytest.mark.asyncio
-    async def test_integration_download_hf_lang_model(self, client, ai_model_storage_service):
+    async def test_integration_download_hf_lang_model(
+        self, client, ai_model_storage_service
+    ):
         # Arrange
         payload = {"hf_model_id": MODEL_NAME_1}
 
@@ -76,8 +79,13 @@ class TestIntegrationAiModelManager:
         # Act
         client.post("/copy_model/", json=payload)
         client.post("/copy_model/", json=payload)
-        client.post("/edit_model_name/", json={"ai_model_id": 2, "new_name": "distilbert 2"})
-        client.post("/edit_model_name/", json={"ai_model_id": 3, "new_name": "Checking for name match"})
+        client.post(
+            "/edit_model_name/", json={"ai_model_id": 2, "new_name": "distilbert 2"}
+        )
+        client.post(
+            "/edit_model_name/",
+            json={"ai_model_id": 3, "new_name": "Checking for name match"},
+        )
 
         # Assert
         assert len(await ai_model_storage_service.get_models()) == 3
@@ -143,4 +151,3 @@ class TestIntegrationAiModelManager:
         assert dtos[0]["name"] == "Checking for name match"
         assert dtos[1]["name"] == "distilbert 2"
         assert dtos[2]["name"] == MODEL_NAME_1
-

@@ -4,7 +4,10 @@ import pytest
 from starlette.testclient import TestClient
 
 from actuosus_ai.ai_model_manager.dto import AIModelDTO
-from actuosus_ai.app.dependency import get_ai_download_service, get_ai_model_storage_service
+from actuosus_ai.app.dependency import (
+    get_ai_download_service,
+    get_ai_model_storage_service,
+)
 from actuosus_ai.app.main import app
 
 
@@ -40,14 +43,16 @@ class TestAIRouter:
 
     def test_download_lm_from_hugging_face_invalid_model(self, mocker, client):
         mock_service = mocker.AsyncMock()
-        mock_service.download_lm_from_hugging_face.side_effect = Exception("Invalid model")
+        mock_service.download_lm_from_hugging_face.side_effect = Exception(
+            "Invalid model"
+        )
         app.dependency_overrides[get_ai_download_service] = lambda: mock_service
         response = client.post(
             "/download/hf_lang_model/",
             json={"hf_model_id": "invalid_model"},
         )
         assert response.status_code == 500
-        assert response.json() == {'message': 'Invalid model', 'success': False}
+        assert response.json() == {"message": "Invalid model", "success": False}
 
     def test_download_lm_from_hugging_face_no_payload(self, mocker, client):
         response = client.post(
@@ -91,6 +96,17 @@ class TestAIRouter:
             "success": True,
             "message": "Model name edited successfully",
         }
+
+    def test_edit_model_name_no_model(self, mocker, client):
+        mock_service = mocker.AsyncMock()
+        mock_service.get_model_by_id.return_value = None
+        app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
+        response = client.post(
+            "/edit_model_name/",
+            json={"ai_model_id": 1, "new_name": "new name"},
+        )
+        assert response.status_code == 404
+        assert response.json() == {"message": "Model not found", "success": False}
 
     def test_edit_model_no_payload(self, mocker, client):
         response = client.post(

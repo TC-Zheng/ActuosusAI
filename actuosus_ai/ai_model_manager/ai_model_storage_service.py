@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from actuosus_ai.ai_model_manager.dto import AIModelDTO, CreateNewAIModelDTO
 from actuosus_ai.ai_model_manager.orm import AIModelORM
-from actuosus_ai.common.actuosus_exception import InternalException
+from actuosus_ai.common.actuosus_exception import InternalException, NotFoundException
 from actuosus_ai.common.settings import Settings
 
 
@@ -57,7 +57,13 @@ class AIModelStorageService:
 
         try:
             # Save model to database
-            self.async_session.add(AIModelORM(name=new_ai_model_dto.name, storage_path=storage_path, pipeline_tag=new_ai_model_dto.pipeline_tag))
+            self.async_session.add(
+                AIModelORM(
+                    name=new_ai_model_dto.name,
+                    storage_path=storage_path,
+                    pipeline_tag=new_ai_model_dto.pipeline_tag,
+                )
+            )
 
             # Save model and required tokenizer, processor, etc. to storage
             await self._save_pretrained(items, storage_path, temp_path)
@@ -122,7 +128,9 @@ class AIModelStorageService:
 
             if name:
                 # If the db is mysql or postgres, use match, otherwise use contains
-                if isinstance(self.async_session.bind.dialect, (mysql_dialect, postgresql_dialect)):
+                if isinstance(
+                    self.async_session.bind.dialect, (mysql_dialect, postgresql_dialect)
+                ):
                     query = query.filter(AIModelORM.name.match(name))
                 else:
                     query = query.filter(AIModelORM.name.contains(name))
@@ -160,13 +168,18 @@ class AIModelStorageService:
             model = await self.get_model_by_id(ai_model_id)
             if model:
                 new_model = copy.copy(model)
-                new_model.ai_model_id = None
-                new_model.storage_path = os.path.join(self.settings.base_file_storage_path, str(uuid.uuid4()))
+                del new_model.ai_model_id
+                new_model.storage_path = os.path.join(
+                    self.settings.base_file_storage_path, str(uuid.uuid4())
+                )
                 await asyncio.get_running_loop().run_in_executor(
-                    None, lambda: shutil.copytree(model.storage_path, new_model.storage_path)
+                    None,
+                    lambda: shutil.copytree(model.storage_path, new_model.storage_path),
                 )
                 self.async_session.add(self._dto_to_orm(new_model))
                 await self.async_session.commit()
+            else:
+                raise NotFoundException("Model not found")
 
         except Exception as e:
             raise InternalException(str(e))

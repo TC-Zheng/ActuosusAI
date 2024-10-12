@@ -17,6 +17,8 @@ def get_ai_model_storage_service(
 
 
 def get_ai_download_service(
-    ai_model_storage_service: AIModelStorageService = Depends(get_ai_model_storage_service),
+    ai_model_storage_service: AIModelStorageService = Depends(
+        get_ai_model_storage_service
+    ),
 ) -> AIModelDownloadService:
     return AIModelDownloadService(ai_model_storage_service)

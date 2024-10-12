@@ -1,4 +1,4 @@
-from unittest.mock import patch, ANY
+from unittest.mock import patch
 
 import pytest
 from huggingface_hub import HfApi
@@ -27,7 +27,6 @@ class TestAIModelDownloadService:
     ):
         # Arrange
         model_name = "some_model_name"
-        storage_path = "some storage path"
         mocked_model_info.return_value = mocker.MagicMock(
             pipeline_tag="some pipeline value"
         )
