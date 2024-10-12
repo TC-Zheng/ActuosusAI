@@ -3,8 +3,10 @@ import os
 from typing import Optional
 
 from transformers import AutoModel, AutoTokenizer
+from huggingface_hub import HfApi
 
-from actuosus_ai.ai_model_manager.language_model_service import LanguageModelService
+from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
+from actuosus_ai.ai_model_manager.dto import CreateNewAIModelDTO
 from actuosus_ai.common.actuosus_exception import (
     InternalException,
     NotFoundException,
@@ -14,9 +16,7 @@ from actuosus_ai.common.settings import Settings
 
 
 class AIModelDownloadService:
-    def __init__(
-        self, settings: Settings, language_model_service: LanguageModelService
-    ):
+    def __init__(self, settings: Settings, language_model_service: AIModelStorageService):
         self.settings = settings
         self.language_model_service = language_model_service
 
@@ -34,10 +34,17 @@ class AIModelDownloadService:
                 loop.run_in_executor(None, AutoModel.from_pretrained, model_name),
                 loop.run_in_executor(None, AutoTokenizer.from_pretrained, model_name),
             )
-
+            api = HfApi()
+            pipeline_tag = api.model_info(model_name).pipeline_tag
             # Save model and tokenizer to storage
             await self.language_model_service.add_new_model(
-                model_name, storage_path, model, tokenizer
+                CreateNewAIModelDTO(
+                    name=model_name,
+                    storage_path=storage_path,
+                    pipeline_tag=pipeline_tag,
+                ),
+                model,
+                tokenizer,
             )
 
         except Exception as e:

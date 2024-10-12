@@ -1,9 +1,13 @@
+from typing import Optional, List
+
 from fastapi import APIRouter, Depends
 
 from actuosus_ai.ai_model_manager.ai_model_download_service import (
     AIModelDownloadService,
 )
-from actuosus_ai.app.dependency import get_ai_download_service
+from actuosus_ai.ai_model_manager.dto import AIModelDTO
+from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
+from actuosus_ai.app.dependency import get_ai_download_service, get_ai_model_service
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -33,3 +37,19 @@ async def download_ai_model(
     return DownloadHFModelResponse(
         success=True, message="Model downloaded successfully"
     )
+
+
+class GetModelRequest(BaseModel):
+    limit: Optional[int] = None
+
+
+class GetModelResponse(BaseModel):
+    models: List[AIModelDTO]
+
+
+@router.get("models")
+async def get_models(
+    request: GetModelRequest,
+    language_model_service: AIModelStorageService = Depends(get_ai_model_service),
+) -> GetModelResponse:
+    return {"models": "models"}

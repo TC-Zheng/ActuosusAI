@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from huggingface_hub import model_info
+
 from actuosus_ai.ai_model_manager.connection import get_async_db_session
 
 import shutil
@@ -8,12 +10,13 @@ import shutil
 import pytest
 from transformers import AutoModel, AutoTokenizer
 
-from actuosus_ai.ai_model_manager.language_model_service import LanguageModelService
+from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
 from integration_tests.integration_test_settings import get_test_settings
 
 DB_URL = "test.db"
 BASE_STORAGE_PATH = "test"
 MODEL_NAME_1 = "dslim/distilbert-NER"
+
 
 class TestIntegrationAiModelManager:
     @classmethod
@@ -48,13 +51,13 @@ class TestIntegrationAiModelManager:
         AutoModel.from_pretrained(os.path.join(BASE_STORAGE_PATH, MODEL_NAME_1))
         AutoTokenizer.from_pretrained(os.path.join(BASE_STORAGE_PATH, MODEL_NAME_1))
         # Check if the model info is saved in the database
+        pipeline_tag = model_info(MODEL_NAME_1).pipeline_tag
+
         async for session in get_async_db_session(get_test_settings()):
-            language_model_service = LanguageModelService(session)
-            dtos = await language_model_service.get_all_models()
+            ai_model_service = AIModelStorageService(session)
+            dtos = await ai_model_service.get_models()
             assert len(dtos) == 1
-            assert dtos[0].lm_id == 1
+            assert dtos[0].ai_model_id == 1
             assert dtos[0].name == MODEL_NAME_1
-            assert (
-                dtos[0].storage_path
-                == os.path.join(BASE_STORAGE_PATH, MODEL_NAME_1)
-            )
+            assert dtos[0].pipeline_tag == pipeline_tag
+            assert dtos[0].storage_path == os.path.join(BASE_STORAGE_PATH, MODEL_NAME_1)
