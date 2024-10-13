@@ -78,9 +78,7 @@ class TestIntegrationAiModelManager:
         # Act
         client.post("/model/1/copy/")
         client.post("/model/1/copy/")
-        client.post(
-            "/model/2", json={"name": "distilbert 2"}
-        )
+        client.post("/model/2", json={"name": "distilbert 2"})
         client.post(
             "/model/3",
             json={"name": "Checking for name match"},
@@ -161,6 +159,9 @@ class TestIntegrationAiModelManager:
         response = client.delete("/model/1")
 
         # Assert
-        assert response.json() == {"success": True, "message": "Model deleted successfully"}
+        assert response.json() == {
+            "success": True,
+            "message": "Model deleted successfully",
+        }
         assert len(await ai_model_storage_service.get_models()) == 2
         assert not path.exists()

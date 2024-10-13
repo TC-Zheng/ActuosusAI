@@ -17,6 +17,7 @@ from actuosus_ai.common.actuosus_exception import NotFoundException
 
 router = APIRouter()
 
+
 class StandardResponse(BaseModel):
     success: bool
     message: str
@@ -24,6 +25,7 @@ class StandardResponse(BaseModel):
 
 class DownloadHFModelRequest(BaseModel):
     hf_model_id: str
+
 
 @router.post("/download/hf_lang_model/")
 async def download_ai_model(
@@ -39,9 +41,11 @@ async def download_ai_model(
 
     return StandardResponse(success=True, message="Model downloaded successfully")
 
+
 class EditModelRequest(BaseModel):
     name: Optional[str] = None
     pipeline_tag: Optional[str] = None
+
 
 @router.post("/model/{ai_model_id}/")
 async def edit_model(
@@ -66,7 +70,6 @@ async def edit_model(
     return StandardResponse(success=True, message="Model name edited successfully")
 
 
-
 @router.post("/model/{ai_model_id}/copy/")
 async def copy_model(
     ai_model_id: int,
@@ -80,6 +83,7 @@ async def copy_model(
     await language_model_service.copy_model_by_id(ai_model_id)
 
     return StandardResponse(success=True, message="Model copied successfully")
+
 
 @router.delete("/model/{ai_model_id}/")
 async def delete_model(
@@ -95,6 +99,7 @@ async def delete_model(
 
     return StandardResponse(success=True, message="Model deleted successfully")
 
+
 class ModelDetails(BaseModel):
     ai_model_id: int
     name: str
@@ -102,8 +107,10 @@ class ModelDetails(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class GetModelResponse(BaseModel):
     models: List[ModelDetails]
+
 
 @router.get("/models/")
 async def get_models(

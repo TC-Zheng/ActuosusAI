@@ -161,7 +161,8 @@ class AIModelStorageService:
                 await self.async_session.delete(model)
                 await self.async_session.commit()
                 await asyncio.get_running_loop().run_in_executor(
-                    None, lambda: shutil.rmtree(str(model.storage_path), ignore_errors=True)
+                    None,
+                    lambda: shutil.rmtree(str(model.storage_path), ignore_errors=True),
                 )
         except Exception as e:
             raise InternalException(str(e))

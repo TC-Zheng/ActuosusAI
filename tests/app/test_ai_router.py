@@ -97,8 +97,10 @@ class TestAIRouter:
             "/model/1",
         )
         assert response.status_code == 200
-        assert response.json() == {"success": True, "message": "Model deleted successfully"}
-
+        assert response.json() == {
+            "success": True,
+            "message": "Model deleted successfully",
+        }
 
     def test_edit_model_name_no_model(self, mocker, client):
         mock_service = mocker.AsyncMock()
@@ -110,7 +112,6 @@ class TestAIRouter:
         )
         assert response.status_code == 404
         assert response.json() == {"message": "Model not found", "success": False}
-
 
     def test_get_models_no_query(self, mocker, client, example_dto):
         mock_service = mocker.AsyncMock()
