@@ -152,15 +152,25 @@ class TestAIModelStorageService:
     @pytest.mark.asyncio
     @patch("shutil.rmtree")
     async def test_delete_model_success(
-        self, mock_rmtree, mocked_settings, mocked_async_session, example_dto
+        self, mock_rmtree, mocked_settings, mocked_async_session, example_dto, mocker
     ):
         # Arrange
+        example_orm = AIModelORM(
+            ai_model_id=1,
+            name="some name 1",
+            storage_path="some storage path 1",
+            pipeline_tag="some pipeline tag 1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+        mocked_result = mocker.MagicMock()
+        mocked_async_session.execute.return_value = mocked_result
+        mocked_result.scalar_one_or_none.return_value = example_orm
         service = AIModelStorageService(mocked_settings, mocked_async_session)
         lm_id = 1
 
         # Act
-        with patch.object(service, "get_model_by_id", return_value=example_dto):
-            await service.delete_model_by_id(lm_id)
+        await service.delete_model_by_id(lm_id)
 
         # Assert
         mocked_async_session.delete.assert_called_once()
