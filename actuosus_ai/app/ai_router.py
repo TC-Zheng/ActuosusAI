@@ -91,9 +91,15 @@ async def edit_model_name(
     return StandardResponse(success=True, message="Model name edited successfully")
 
 
-class GetModelResponse(BaseModel):
-    models: List[AIModelDTO]
+class ModelDetails(BaseModel):
+    ai_model_id: int
+    name: str
+    pipeline_tag: str
+    created_at: str
+    updated_at: str
 
+class GetModelResponse(BaseModel):
+    models: List[ModelDetails]
 
 @router.get("/get_models/")
 async def get_models(
