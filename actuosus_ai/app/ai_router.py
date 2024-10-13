@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends
@@ -95,8 +96,8 @@ class ModelDetails(BaseModel):
     ai_model_id: int
     name: str
     pipeline_tag: str
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
 class GetModelResponse(BaseModel):
     models: List[ModelDetails]
@@ -120,4 +121,4 @@ async def get_models(
         limit, offset, name, pipeline_tag, order_by, is_desc
     )
 
-    return GetModelResponse(models=dtos)
+    return GetModelResponse(models=[ModelDetails(**dto.model_dump()) for dto in dtos])
