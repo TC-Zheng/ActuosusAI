@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends
 from actuosus_ai.ai_model_manager.ai_model_download_service import (
     AIModelDownloadService,
 )
-from actuosus_ai.ai_model_manager.dto import AIModelDTO
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
 from actuosus_ai.app.dependency import (
     get_ai_download_service,
