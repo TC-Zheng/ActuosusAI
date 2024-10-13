@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends
@@ -5,7 +6,6 @@ from fastapi import APIRouter, Depends
 from actuosus_ai.ai_model_manager.ai_model_download_service import (
     AIModelDownloadService,
 )
-from actuosus_ai.ai_model_manager.dto import AIModelDTO
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
 from actuosus_ai.app.dependency import (
     get_ai_download_service,
@@ -18,10 +18,6 @@ from actuosus_ai.common.actuosus_exception import NotFoundException
 router = APIRouter()
 
 
-class SingleModelIdRequest(BaseModel):
-    ai_model_id: int
-
-
 class StandardResponse(BaseModel):
     success: bool
     message: str
@@ -29,11 +25,6 @@ class StandardResponse(BaseModel):
 
 class DownloadHFModelRequest(BaseModel):
     hf_model_id: str
-
-
-class DownloadHFModelResponse(BaseModel):
-    success: bool
-    message: str
 
 
 @router.post("/download/hf_lang_model/")
@@ -51,29 +42,15 @@ async def download_ai_model(
     return StandardResponse(success=True, message="Model downloaded successfully")
 
 
-@router.post("/copy_model/")
-async def copy_model(
-    request: SingleModelIdRequest,
-    language_model_service: AIModelStorageService = Depends(
-        get_ai_model_storage_service
-    ),
-) -> StandardResponse:
-    """
-    Copy a model based on it's id
-    """
-    await language_model_service.copy_model_by_id(request.ai_model_id)
-
-    return StandardResponse(success=True, message="Model copied successfully")
+class EditModelRequest(BaseModel):
+    name: Optional[str] = None
+    pipeline_tag: Optional[str] = None
 
 
-class EditModelNameRequest(BaseModel):
-    ai_model_id: int
-    new_name: str
-
-
-@router.post("/edit_model_name/")
-async def edit_model_name(
-    request: EditModelNameRequest,
+@router.post("/model/{ai_model_id}/")
+async def edit_model(
+    ai_model_id: int,
+    request: EditModelRequest,
     language_model_service: AIModelStorageService = Depends(
         get_ai_model_storage_service
     ),
@@ -81,9 +58,11 @@ async def edit_model_name(
     """
     Edit a model's name based on it's id
     """
-    dto = await language_model_service.get_model_by_id(request.ai_model_id)
+    dto = await language_model_service.get_model_by_id(ai_model_id)
     if dto:
-        dto.name = request.new_name
+        update_data = request.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(dto, key, value)
     else:
         raise NotFoundException("Model not found")
     await language_model_service.update_model(dto)
@@ -91,11 +70,49 @@ async def edit_model_name(
     return StandardResponse(success=True, message="Model name edited successfully")
 
 
+@router.post("/model/{ai_model_id}/copy/")
+async def copy_model(
+    ai_model_id: int,
+    language_model_service: AIModelStorageService = Depends(
+        get_ai_model_storage_service
+    ),
+) -> StandardResponse:
+    """
+    Copy a model based on it's id
+    """
+    await language_model_service.copy_model_by_id(ai_model_id)
+
+    return StandardResponse(success=True, message="Model copied successfully")
+
+
+@router.delete("/model/{ai_model_id}/")
+async def delete_model(
+    ai_model_id: int,
+    language_model_service: AIModelStorageService = Depends(
+        get_ai_model_storage_service
+    ),
+) -> StandardResponse:
+    """
+    Delete a model based on it's id
+    """
+    await language_model_service.delete_model_by_id(ai_model_id)
+
+    return StandardResponse(success=True, message="Model deleted successfully")
+
+
+class ModelDetails(BaseModel):
+    ai_model_id: int
+    name: str
+    pipeline_tag: str
+    created_at: datetime
+    updated_at: datetime
+
+
 class GetModelResponse(BaseModel):
-    models: List[AIModelDTO]
+    models: List[ModelDetails]
 
 
-@router.get("/get_models/")
+@router.get("/models/")
 async def get_models(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
@@ -108,10 +125,10 @@ async def get_models(
     ),
 ) -> GetModelResponse:
     """
-    Get all models
+    Get models
     """
     dtos = await language_model_service.get_models(
         limit, offset, name, pipeline_tag, order_by, is_desc
     )
 
-    return GetModelResponse(models=dtos)
+    return GetModelResponse(models=[ModelDetails(**dto.model_dump()) for dto in dtos])

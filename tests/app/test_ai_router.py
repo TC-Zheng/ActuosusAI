@@ -65,22 +65,13 @@ class TestAIRouter:
         mock_service = mocker.AsyncMock()
         mock_service.copy_model_by_id.return_value = None
         app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
-        response = client.post(
-            "/copy_model/",
-            json={"ai_model_id": 1},
-        )
+        response = client.post("/model/1/copy/")
+
         assert response.status_code == 200
         assert response.json() == {
             "success": True,
             "message": "Model copied successfully",
         }
-
-    def test_copy_model_no_payload(self, mocker, client):
-        response = client.post(
-            "/copy_model/",
-            json={},
-        )
-        assert response.status_code == 422
 
     def test_edit_model_name(self, mocker, client, example_dto):
         mock_service = mocker.AsyncMock()
@@ -88,13 +79,27 @@ class TestAIRouter:
         mock_service.update_model.return_value = None
         app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
         response = client.post(
-            "/edit_model_name/",
-            json={"ai_model_id": 1, "new_name": "new name"},
+            "/model/1",
+            json={"name": "new name"},
+        )
+        assert response.json() == {
+            "success": True,
+            "message": "Model name edited successfully",
+        }
+        assert response.status_code == 200
+
+    def test_delete_model(self, mocker, client, example_dto):
+        mock_service = mocker.AsyncMock()
+        mock_service.get_model_by_id.return_value = example_dto
+        mock_service.delete_model_by_id.return_value = None
+        app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
+        response = client.delete(
+            "/model/1",
         )
         assert response.status_code == 200
         assert response.json() == {
             "success": True,
-            "message": "Model name edited successfully",
+            "message": "Model deleted successfully",
         }
 
     def test_edit_model_name_no_model(self, mocker, client):
@@ -102,25 +107,18 @@ class TestAIRouter:
         mock_service.get_model_by_id.return_value = None
         app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
         response = client.post(
-            "/edit_model_name/",
-            json={"ai_model_id": 1, "new_name": "new name"},
+            "/model/1",
+            json={"new_name": "new name"},
         )
         assert response.status_code == 404
         assert response.json() == {"message": "Model not found", "success": False}
-
-    def test_edit_model_no_payload(self, mocker, client):
-        response = client.post(
-            "/edit_model_name/",
-            json={},
-        )
-        assert response.status_code == 422
 
     def test_get_models_no_query(self, mocker, client, example_dto):
         mock_service = mocker.AsyncMock()
         mock_service.get_models.return_value = [example_dto]
         app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
         response = client.get(
-            "/get_models/",
+            "/models/",
         )
         assert response.status_code == 200
         assert response.json() == {
@@ -128,7 +126,6 @@ class TestAIRouter:
                 {
                     "ai_model_id": 1,
                     "name": "some name 1",
-                    "storage_path": "some storage path 1",
                     "pipeline_tag": "some pipeline tag 1",
                     "created_at": example_dto.created_at.isoformat(),
                     "updated_at": example_dto.updated_at.isoformat(),
@@ -141,7 +138,7 @@ class TestAIRouter:
         mock_service.get_models.return_value = [example_dto]
         app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
         response = client.get(
-            "/get_models/?limit=1&offset=0&name=some name 1&pipeline_tag=some pipeline tag 1&order_by=created_at&is_desc=True",
+            "/models/?limit=1&offset=0&name=some name 1&pipeline_tag=some pipeline tag 1&order_by=created_at&is_desc=True",
         )
         assert response.status_code == 200
         assert response.json() == {
@@ -149,7 +146,6 @@ class TestAIRouter:
                 {
                     "ai_model_id": 1,
                     "name": "some name 1",
-                    "storage_path": "some storage path 1",
                     "pipeline_tag": "some pipeline tag 1",
                     "created_at": example_dto.created_at.isoformat(),
                     "updated_at": example_dto.updated_at.isoformat(),
