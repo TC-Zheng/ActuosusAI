@@ -11,7 +11,7 @@ export const useFetchModels = () => {
   const { executeFetch, response, loading, error } =
     useApiRequest<GetModelsResponse>();
   useEffect(() => {
-    void executeFetch('http://127.0.0.1:8000/get_models/');
+    void executeFetch('http://127.0.0.1:8000/models/');
   }, [executeFetch]);
   const models_details = response?.models_details ?? [];
 

@@ -74,17 +74,16 @@ class TestIntegrationAiModelManager:
     @pytest.mark.asyncio
     async def test_copy_model(self, client, ai_model_storage_service):
         # Arrange
-        payload = {"ai_model_id": 1}
 
         # Act
-        client.post("/copy_model/", json=payload)
-        client.post("/copy_model/", json=payload)
+        client.post("/model/1/copy/")
+        client.post("/model/1/copy/")
         client.post(
-            "/edit_model_name/", json={"ai_model_id": 2, "new_name": "distilbert 2"}
+            "/model/2", json={"name": "distilbert 2"}
         )
         client.post(
-            "/edit_model_name/",
-            json={"ai_model_id": 3, "new_name": "Checking for name match"},
+            "/model/3",
+            json={"name": "Checking for name match"},
         )
 
         # Assert
@@ -93,7 +92,7 @@ class TestIntegrationAiModelManager:
     @pytest.mark.asyncio
     async def test_get_all_models(self, client):
         # Act
-        response = client.get("/get_models/")
+        response = client.get("/models/")
         dtos = response.json()["models"]
 
         # Assert
@@ -105,7 +104,7 @@ class TestIntegrationAiModelManager:
     @pytest.mark.asyncio
     async def test_get_models_limit_offset(self, client):
         # Act
-        response = client.get("/get_models/?limit=2&offset=1")
+        response = client.get("/models/?limit=2&offset=1")
         dtos = response.json()["models"]
 
         # Assert
@@ -116,7 +115,7 @@ class TestIntegrationAiModelManager:
     @pytest.mark.asyncio
     async def test_get_models_filter_by_name(self, client):
         # Act
-        response = client.get("/get_models/?name=distilbert")
+        response = client.get("/models/?name=distilbert")
         dtos = response.json()["models"]
 
         # Assert
@@ -127,14 +126,14 @@ class TestIntegrationAiModelManager:
     @pytest.mark.asyncio
     async def test_get_models_filter_by_pipeline_tag(self, client):
         # Act
-        response = client.get("/get_models/?pipeline_tag=token-classification")
+        response = client.get("/models/?pipeline_tag=token-classification")
         dtos = response.json()["models"]
 
         # Assert
         assert len(dtos) == 3
 
         # Act
-        response = client.get("/get_models/?pipeline_tag=wrong tag")
+        response = client.get("/models/?pipeline_tag=wrong tag")
         dtos = response.json()["models"]
 
         # Assert
@@ -143,7 +142,7 @@ class TestIntegrationAiModelManager:
     @pytest.mark.asyncio
     async def test_get_models_order_by(self, client):
         # Act
-        response = client.get("/get_models/?order_by=ai_model_id&is_desc=True")
+        response = client.get("/models/?order_by=ai_model_id&is_desc=True")
         dtos = response.json()["models"]
 
         # Assert

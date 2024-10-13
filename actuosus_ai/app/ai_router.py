@@ -17,11 +17,6 @@ from actuosus_ai.common.actuosus_exception import NotFoundException
 
 router = APIRouter()
 
-
-class SingleModelIdRequest(BaseModel):
-    ai_model_id: int
-
-
 class StandardResponse(BaseModel):
     success: bool
     message: str
@@ -29,12 +24,6 @@ class StandardResponse(BaseModel):
 
 class DownloadHFModelRequest(BaseModel):
     hf_model_id: str
-
-
-class DownloadHFModelResponse(BaseModel):
-    success: bool
-    message: str
-
 
 @router.post("/download/hf_lang_model/")
 async def download_ai_model(
@@ -50,30 +39,14 @@ async def download_ai_model(
 
     return StandardResponse(success=True, message="Model downloaded successfully")
 
+class EditModelRequest(BaseModel):
+    name: Optional[str] = None
+    pipeline_tag: Optional[str] = None
 
-@router.post("/copy_model/")
-async def copy_model(
-    request: SingleModelIdRequest,
-    language_model_service: AIModelStorageService = Depends(
-        get_ai_model_storage_service
-    ),
-) -> StandardResponse:
-    """
-    Copy a model based on it's id
-    """
-    await language_model_service.copy_model_by_id(request.ai_model_id)
-
-    return StandardResponse(success=True, message="Model copied successfully")
-
-
-class EditModelNameRequest(BaseModel):
-    ai_model_id: int
-    new_name: str
-
-
-@router.post("/edit_model_name/")
-async def edit_model_name(
-    request: EditModelNameRequest,
+@router.post("/model/{ai_model_id}/")
+async def edit_model(
+    ai_model_id: int,
+    request: EditModelRequest,
     language_model_service: AIModelStorageService = Depends(
         get_ai_model_storage_service
     ),
@@ -81,14 +54,32 @@ async def edit_model_name(
     """
     Edit a model's name based on it's id
     """
-    dto = await language_model_service.get_model_by_id(request.ai_model_id)
+    dto = await language_model_service.get_model_by_id(ai_model_id)
     if dto:
-        dto.name = request.new_name
+        update_data = request.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(dto, key, value)
     else:
         raise NotFoundException("Model not found")
     await language_model_service.update_model(dto)
 
     return StandardResponse(success=True, message="Model name edited successfully")
+
+
+
+@router.post("/model/{ai_model_id}/copy/")
+async def copy_model(
+    ai_model_id: int,
+    language_model_service: AIModelStorageService = Depends(
+        get_ai_model_storage_service
+    ),
+) -> StandardResponse:
+    """
+    Copy a model based on it's id
+    """
+    await language_model_service.copy_model_by_id(ai_model_id)
+
+    return StandardResponse(success=True, message="Model copied successfully")
 
 
 class ModelDetails(BaseModel):
@@ -101,7 +92,7 @@ class ModelDetails(BaseModel):
 class GetModelResponse(BaseModel):
     models: List[ModelDetails]
 
-@router.get("/get_models/")
+@router.get("/models/")
 async def get_models(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
