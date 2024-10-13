@@ -150,3 +150,17 @@ class TestIntegrationAiModelManager:
         assert dtos[0]["name"] == "Checking for name match"
         assert dtos[1]["name"] == "distilbert 2"
         assert dtos[2]["name"] == MODEL_NAME_1
+
+    @pytest.mark.asyncio
+    async def test_delete_model(self, client, ai_model_storage_service):
+        # Arrange
+        dto = await ai_model_storage_service.get_model_by_id(1)
+        path = Path(dto.storage_path)
+
+        # Act
+        response = client.delete("/model/1")
+
+        # Assert
+        assert response.json() == {"success": True, "message": "Model deleted successfully"}
+        assert len(await ai_model_storage_service.get_models()) == 2
+        assert not path.exists()

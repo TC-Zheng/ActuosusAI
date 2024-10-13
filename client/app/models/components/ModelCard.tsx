@@ -1,6 +1,7 @@
 'use client';
 import CopyIcon from '@/app/public/icon/copy.svg';
 import EditIcon from '@/app/public/icon/edit.svg';
+import DeleteIcon from '@/app/public/icon/delete.svg';
 
 export type ModelCardProps = {
   name: string;
@@ -10,6 +11,7 @@ export type ModelCardProps = {
   ai_model_id: number;
   handleEdit: (ai_model_id: number) => void;
   handleCopy: (ai_model_id: number) => void;
+  handleDelete: (ai_model_id: number) => void;
 };
 export default function ModelCard({
   name,
@@ -19,6 +21,7 @@ export default function ModelCard({
   updated_at,
   handleEdit,
   handleCopy,
+  handleDelete,
 }: ModelCardProps) {
   return (
     <div
@@ -37,6 +40,14 @@ export default function ModelCard({
           className="hover:scale-110 transition-transform duration-200"
         >
           <EditIcon className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="absolute top-2 left-2">
+        <button
+          onClick={() => handleDelete(ai_model_id)}
+          className="hover:scale-110 transition-transform duration-200"
+        >
+          <DeleteIcon className="w-6 h-6" />
         </button>
       </div>
       <h2 className="text-primary-200 text-center my-2">{name}</h2>

@@ -88,6 +88,17 @@ class TestAIRouter:
         }
         assert response.status_code == 200
 
+    def test_delete_model(self, mocker, client, example_dto):
+        mock_service = mocker.AsyncMock()
+        mock_service.get_model_by_id.return_value = example_dto
+        mock_service.delete_model_by_id.return_value = None
+        app.dependency_overrides[get_ai_model_storage_service] = lambda: mock_service
+        response = client.delete(
+            "/model/1",
+        )
+        assert response.status_code == 200
+        assert response.json() == {"success": True, "message": "Model deleted successfully"}
+
 
     def test_edit_model_name_no_model(self, mocker, client):
         mock_service = mocker.AsyncMock()

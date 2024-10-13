@@ -81,6 +81,19 @@ async def copy_model(
 
     return StandardResponse(success=True, message="Model copied successfully")
 
+@router.delete("/model/{ai_model_id}/")
+async def delete_model(
+    ai_model_id: int,
+    language_model_service: AIModelStorageService = Depends(
+        get_ai_model_storage_service
+    ),
+) -> StandardResponse:
+    """
+    Delete a model based on it's id
+    """
+    await language_model_service.delete_model_by_id(ai_model_id)
+
+    return StandardResponse(success=True, message="Model deleted successfully")
 
 class ModelDetails(BaseModel):
     ai_model_id: int
@@ -105,7 +118,7 @@ async def get_models(
     ),
 ) -> GetModelResponse:
     """
-    Get all models
+    Get models
     """
     dtos = await language_model_service.get_models(
         limit, offset, name, pipeline_tag, order_by, is_desc
