@@ -152,3 +152,17 @@ class TestAIRouter:
                 }
             ]
         }
+
+    @pytest.mark.asyncio
+    async def test_search_hugging_face(self, mocker, client):
+        # Arrange
+        mock_service = mocker.AsyncMock()
+        mock_service.search_hub_with_name.return_value = ["model1", "model2"]
+        app.dependency_overrides[get_ai_download_service] = lambda: mock_service
+
+        # Act
+        response = client.get("/huggingface/search/test_model/")
+
+        # Assert
+        assert response.status_code == 200
+        assert response.json() == ["model1", "model2"]

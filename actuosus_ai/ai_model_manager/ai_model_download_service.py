@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from transformers import AutoModel, AutoTokenizer
 from huggingface_hub import HfApi
@@ -52,3 +53,11 @@ class AIModelDownloadService:
 
             else:
                 raise InternalException(msg)
+
+    @staticmethod
+    async def search_hub_with_name(model_name: str, limit: int) -> List:
+        try:
+            api = HfApi()
+            return [model.id for model in api.list_models(search=model_name, limit=limit)]
+        except Exception as e:
+            raise InternalException(str(e))
