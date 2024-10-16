@@ -17,5 +17,6 @@ load_dotenv(override=True)
 settings = Settings()  # type: ignore
 login(settings.huggingface_token)
 
+
 def get_settings() -> Settings:
     return settings

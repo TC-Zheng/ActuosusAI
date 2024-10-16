@@ -50,8 +50,7 @@ class TestIntegrationAiModelManager:
         response = client.get(f"/huggingface/search/{name}/")
 
         # Assert
-        print(response.json())
-        assert MODEL_NAME_1 in response.json()
+        assert MODEL_NAME_1 in response.json()['model_names']
         assert response.status_code == 200
 
     @pytest.mark.asyncio

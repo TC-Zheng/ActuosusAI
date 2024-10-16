@@ -55,9 +55,11 @@ class AIModelDownloadService:
                 raise InternalException(msg)
 
     @staticmethod
-    async def search_hub_with_name(model_name: str, limit: int) -> List:
+    async def search_hub_with_name(model_name: str, limit: int) -> List[str]:
         try:
             api = HfApi()
-            return [model.id for model in api.list_models(search=model_name, limit=limit)]
+            return [
+                model.id for model in api.list_models(search=model_name, limit=limit)
+            ]
         except Exception as e:
             raise InternalException(str(e))

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends
@@ -132,8 +133,10 @@ async def get_models(
 
     return GetModelResponse(models=[ModelDetails(**dto.model_dump()) for dto in dtos])
 
+
 class SearchHuggingFaceResponse(BaseModel):
     model_names: List[str]
+
 
 @router.get("/huggingface/search/{model_name:path}/")
 async def search_hugging_face(
