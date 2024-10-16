@@ -132,3 +132,21 @@ async def get_models(
     )
 
     return GetModelResponse(models=[ModelDetails(**dto.model_dump()) for dto in dtos])
+
+
+class SearchHuggingFaceResponse(BaseModel):
+    model_names: List[str]
+
+
+@router.get("/huggingface/search/{model_name:path}/")
+async def search_hugging_face(
+    model_name: str,
+    download_ai_model_service: AIModelDownloadService = Depends(
+        get_ai_download_service
+    ),
+) -> SearchHuggingFaceResponse:
+    """
+    Search Hugging Face models
+    """
+    model_names = await download_ai_model_service.search_hub_with_name(model_name, 10)
+    return SearchHuggingFaceResponse(model_names=model_names)

@@ -3,83 +3,107 @@ import ModelCard from '@/app/models/components/ModelCard';
 import Loader from '@/app/components/Loader';
 import {
   useDeleteModel,
-  useFetchModels,
+  useGetModelDetails,
+  useGetSearchHub,
   usePostCopyModel,
+  usePostDownload,
 } from '@/app/models/hooks/customHooks';
 import React, { useEffect, useState } from 'react';
-import { error_toast, success_toast } from '@/app/utils/utils';
-import Link from 'next/link';
-import {
-  Description,
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-} from '@headlessui/react';
-
-export type ModelDetails = {
-  ai_model_id: number;
-  name: string;
-  pipeline_tag: string;
-  created_at: string;
-  updated_at: string;
-};
+import { success_toast, useDebounce, warning_toast } from '@/app/utils/utils';
+import DeleteDialog from '@/app/models/components/DeleteDialog';
+import SearchDownloadComboBox from '@/app/models/components/SearchDownloadComboBox';
 
 export default function ModelsPage() {
   const [selectedModel, setSelectedModel] = useState<number>(0);
-  const [open, setOpen] = useState(false);
-  const { models_details, fetchModels, fetchModelLoading, fetchModelError } =
-    useFetchModels();
-  const {
-    postCopyRequest,
-    copyModelResponse,
-    copyModelLoading,
-    copyModelError,
-  } = usePostCopyModel();
-  const {
-    deleteModelRequest,
-    deleteModelResponse,
-    deleteModelLoading,
-    deleteModelError,
-  } = useDeleteModel();
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
+  const [selectedSearchName, setSelectedSearchName] = useState<string>('');
 
-  const loading = fetchModelLoading || copyModelLoading || deleteModelLoading;
-  const error = fetchModelError || copyModelError || deleteModelError;
+  const { getModelDetails, modelDetailsResponse, modelDetailsLoading } =
+    useGetModelDetails();
+
+  const { postCopyModel, copyModelResponse, copyModelLoading } =
+    usePostCopyModel();
+
+  const { deleteModel, deleteModelResponse, deleteModelLoading } =
+    useDeleteModel();
+
+  const { postDownloadModel, downloadModelResponse, downloadModelLoading } =
+    usePostDownload();
+  const { getSearchHub, searchResponse } = useGetSearchHub();
+  const debouncedSearchHub = useDebounce(getSearchHub, 300);
+
+  // Fetch model details on page load
   useEffect(() => {
-    if (error) {
-      error_toast(error);
-    }
-  }, [error]);
+    void getModelDetails();
+  }, [getModelDetails]);
 
+  // After copy, delete, edit, or download, refresh the model details
+  useEffect(() => {
+    if (deleteModelResponse) {
+      success_toast(deleteModelResponse.message);
+      void getModelDetails();
+    }
+  }, [deleteModelResponse, getModelDetails]);
   useEffect(() => {
     if (copyModelResponse) {
       success_toast(copyModelResponse.message);
-      void fetchModels();
-    } else if (deleteModelResponse) {
-      success_toast(deleteModelResponse.message);
-      void fetchModels();
+      void getModelDetails();
     }
-  }, [copyModelResponse, deleteModelResponse]);
+  }, [copyModelResponse, getModelDetails]);
+  useEffect(() => {
+    if (downloadModelResponse) {
+      success_toast(downloadModelResponse.message);
+      void getModelDetails();
+    }
+  }, [downloadModelResponse, getModelDetails]);
 
   const handleCopy = (ai_model_id: number) => {
-    void postCopyRequest(ai_model_id);
+    if (copyModelLoading) {
+      warning_toast(
+        'Currently processing another copy request, please wait for it to finish'
+      );
+    } else {
+      void postCopyModel(ai_model_id);
+    }
   };
   const handleEdit = (ai_model_id: number) => {
     console.log(`Edit ${ai_model_id}`);
   };
   const handleDelete = (ai_model_id: number) => {
-    setOpen(true);
-    setSelectedModel(ai_model_id);
-    // void deleteModelRequest(ai_model_id);
+    if (deleteModelLoading) {
+      warning_toast(
+        'Currently processing another delete request, please wait for it to finish'
+      );
+    } else {
+      setOpenDeleteDialog(true);
+      setSelectedModel(ai_model_id);
+    }
+  };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const trimmedInput = e.target.value.trim();
+    if (trimmedInput) {
+      debouncedSearchHub(trimmedInput);
+    }
   };
   return (
     <>
-      {loading && <Loader />}
-      {!loading && (
+      <h1 className="text-2xl text-center mt-10">Download Model</h1>
+      <SearchDownloadComboBox
+        selectedSearchName={selectedSearchName}
+        setSelectedSearchName={setSelectedSearchName}
+        model_names={searchResponse?.model_names ?? []}
+        onInputChange={handleInputChange}
+        onDownloadModelClick={() => {
+          void postDownloadModel({ hf_model_id: selectedSearchName });
+        }}
+        downloadModelLoading={downloadModelLoading}
+      />
+      {modelDetailsLoading && <Loader />}
+      {!modelDetailsLoading && (
         <>
-          <div>Title</div>
-          <Link href="/models/download">Download</Link>
+          <h1 className="text-2xl text-center mt-10">Model List</h1>
           <div className="flex flex-wrap justify-center">
-            {models_details.map(
+            {(modelDetailsResponse?.models ?? []).map(
               ({ name, pipeline_tag, ai_model_id, created_at, updated_at }) => (
                 <ModelCard
                   key={ai_model_id}
@@ -95,35 +119,14 @@ export default function ModelsPage() {
               )
             )}
           </div>
-          <Dialog
-            open={open}
-            onClose={() => setOpen(false)}
-            className="relative z-50"
-          >
-            <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-              <DialogPanel className="max-w-lg space-y-4 border bg-background-700 p-12 text-accent-50">
-                <DialogTitle className="font-bold">Delete Model</DialogTitle>
-                <Description>
-                  This will permanently delete this model
-                </Description>
-                <p>
-                  Are you sure you want to delete the model? This action cannot
-                  be undone.
-                </p>
-                <div className="flex gap-4">
-                  <button onClick={() => setOpen(false)}>Cancel</button>
-                  <button
-                    onClick={() => {
-                      setOpen(false);
-                      void deleteModelRequest(selectedModel);
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </DialogPanel>
-            </div>
-          </Dialog>
+          <DeleteDialog
+            open={openDeleteDialog}
+            onClose={() => setOpenDeleteDialog(false)}
+            onClick={() => {
+              setOpenDeleteDialog(false);
+              void deleteModel(selectedModel);
+            }}
+          />
         </>
       )}
     </>

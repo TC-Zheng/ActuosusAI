@@ -41,7 +41,18 @@ class TestIntegrationAiModelManager:
         async for session in get_async_db_session(get_test_settings()):
             return AIModelStorageService(get_test_settings(), session)
 
-    # Test by downloading a small bert model from hugging face then try to load it and check if it is saved in the database
+    @pytest.mark.asyncio
+    async def test_integration_search_hugging_face(self, client):
+        # Arrange
+        name = MODEL_NAME_1[:-1]
+
+        # Act
+        response = client.get(f"/huggingface/search/{name}/")
+
+        # Assert
+        assert MODEL_NAME_1 in response.json()['model_names']
+        assert response.status_code == 200
+
     @pytest.mark.asyncio
     async def test_integration_download_hf_lang_model(
         self, client, ai_model_storage_service
