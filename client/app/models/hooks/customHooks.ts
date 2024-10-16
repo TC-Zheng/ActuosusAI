@@ -1,6 +1,5 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import useFetch from '@/app/hooks/useFetch';
-import { error_toast } from '@/app/utils/utils';
 
 export type ModelDetails = {
   ai_model_id: number;
