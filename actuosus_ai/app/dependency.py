@@ -1,6 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.ai_model_manager.ai_model_download_service import (
     AIModelDownloadService,
 )
@@ -22,3 +23,11 @@ def get_ai_download_service(
     ),
 ) -> AIModelDownloadService:
     return AIModelDownloadService(ai_model_storage_service)
+
+
+def get_text_generation_service(
+    ai_model_storage_service: AIModelStorageService = Depends(
+        get_ai_model_storage_service
+    ),
+) -> TextGenerationService:
+    return TextGenerationService(ai_model_storage_service)

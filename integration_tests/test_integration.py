@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest_asyncio
 from huggingface_hub import model_info
 
+from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.ai_model_manager.connection import get_async_db_session
 
 import shutil
@@ -13,13 +14,14 @@ from transformers import AutoModel, AutoTokenizer
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
 from integration_tests.conftest import get_test_settings
 
+
 DB_URL = "test.db"
 BASE_STORAGE_PATH = "test"
 MODEL_NAME_1 = "dslim/distilbert-NER"
 MODEL_PIPELINE_TAG_1 = "token-classification"
 
 
-class TestIntegrationAiModelManager:
+class TestIntegration:
     @classmethod
     def setup_class(cls):
         # clean up test directory
@@ -50,7 +52,7 @@ class TestIntegrationAiModelManager:
         response = client.get(f"/huggingface/search/{name}/")
 
         # Assert
-        assert MODEL_NAME_1 in response.json()['model_names']
+        assert MODEL_NAME_1 in response.json()["model_names"]
         assert response.status_code == 200
 
     @pytest.mark.asyncio
@@ -176,3 +178,9 @@ class TestIntegrationAiModelManager:
         }
         assert len(await ai_model_storage_service.get_models()) == 2
         assert not path.exists()
+
+    @pytest.mark.asyncio
+    async def test_text_generation_service(self, ai_model_storage_service):
+        # Arrange
+        dto = await ai_model_storage_service.get_models(name=MODEL_NAME_1)
+        storage_path = dto[0].storage_path

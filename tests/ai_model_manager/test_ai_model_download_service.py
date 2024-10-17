@@ -74,7 +74,9 @@ class TestAIModelDownloadService:
     @patch("actuosus_ai.ai_model_manager.ai_model_download_service.HfApi")
     async def test_get_model_info(self, mock_hf_api, mocker):
         # Arrange
-        mock_hf_api.return_value.list_models.return_value = [mocker.MagicMock(id="model1")]
+        mock_hf_api.return_value.list_models.return_value = [
+            mocker.MagicMock(id="model1")
+        ]
         model_name = "test_model"
 
         # Act
