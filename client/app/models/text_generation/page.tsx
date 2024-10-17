@@ -1,19 +1,23 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+import WordDropdown from '@/app/models/text_generation/components/WordDropdown';
+type textGenerationResponse = {
+  response: Array<Array<[string, number]>>;
+};
 
 const WebSocketComponent = () => {
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<textGenerationResponse | null>(null);
   const [inputMessage, setInputMessage] = useState<string>('');
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     // Create a new WebSocket connection
-    ws.current = new WebSocket(`ws://127.0.0.1:8000/ws/generation/${1}/`);
+    ws.current = new WebSocket(`ws://127.0.0.1:8000/ws/generation/${4}/`);
 
     // Handle incoming messages
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, JSON.stringify(data)]);
+      setMessages(data);
     };
 
     // Handle connection close
@@ -37,7 +41,7 @@ const WebSocketComponent = () => {
   // Send message function
   const sendMessage = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      const message = JSON.stringify({ prompt: inputMessage });
+      const message = JSON.stringify({ prompt: inputMessage, temperature: 1.5 });
       ws.current.send(message);
       setInputMessage(''); // Clear input after sending
     } else {
@@ -48,11 +52,11 @@ const WebSocketComponent = () => {
   return (
     <div>
       <h1>WebSocket Messages</h1>
-      <ul>
-        {messages.map((msg, index) => (
-          <li key={index}>{msg}</li>
+      <div className="flex flex-wrap gap-1">
+        {messages?.response.map((wordList, index) => (
+          <WordDropdown key={index} wordList={wordList} />
         ))}
-      </ul>
+      </div>
 
       <input
         type="text"

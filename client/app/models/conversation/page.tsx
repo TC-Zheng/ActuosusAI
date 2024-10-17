@@ -1,8 +1,11 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+type textGenerationResponse = {
+  response: Array<Array<[string, number]>>;
+};
 
 const WebSocketComponent = () => {
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<textGenerationResponse | null>(null);
   const [inputMessage, setInputMessage] = useState<string>('');
   const ws = useRef<WebSocket | null>(null);
 
@@ -13,7 +16,7 @@ const WebSocketComponent = () => {
     // Handle incoming messages
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, JSON.stringify(data)]);
+      setMessages(data);
     };
 
     // Handle connection close
@@ -49,7 +52,7 @@ const WebSocketComponent = () => {
     <div>
       <h1>WebSocket Messages</h1>
       <ul>
-        {messages.map((msg, index) => (
+        {messages?.response.map((msg, index) => (
           <li key={index}>{msg}</li>
         ))}
       </ul>
