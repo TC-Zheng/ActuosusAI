@@ -10,7 +10,7 @@ const WebSocketComponent = () => {
   const [messages, setMessages] = useState<Array<Array<[string, number]>>>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const ws = useRef<WebSocket | null>(null);
-  const { passThrough, search } = useTrie();
+  const { insertTrie, searchTrie } = useTrie();
 
   useEffect(() => {
     // Create a new WebSocket connection
@@ -19,7 +19,7 @@ const WebSocketComponent = () => {
     // Handle incoming messages
     ws.current.onmessage = (event) => {
       const data: textGenerationResponse = JSON.parse(event.data);
-      const newMessages = passThrough(data.response);
+      const newMessages = insertTrie(data.response);
       setMessages(newMessages);
     };
 
@@ -60,7 +60,7 @@ const WebSocketComponent = () => {
     const prev_messages = messages
       .slice(0, index)
       .map((wordList) => wordList[0][0]);
-    const searchResults = search([...prev_messages, word]);
+    const searchResults = searchTrie([...prev_messages, word]);
     if (searchResults) {
       setMessages(searchResults);
       return;

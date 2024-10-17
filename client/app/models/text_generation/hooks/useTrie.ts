@@ -14,7 +14,7 @@ class WordListsTrie {
     this.root = new TrieNode();
   }
 
-  passThrough(
+  insert(
     wordLists: Array<Array<[string, number]>>
   ): Array<Array<[string, number]>> {
     let current = this.root;
@@ -65,14 +65,14 @@ import { useState, useCallback } from 'react';
 function useTrie() {
   const [trie] = useState(() => new WordListsTrie());
 
-  const passThrough = useCallback(
+  const insertTrie = useCallback(
     (wordLists: Array<Array<[string, number]>>) => {
-      return trie.passThrough(wordLists);
+      return trie.insert(wordLists);
     },
     [trie]
   );
 
-  const search = useCallback(
+  const searchTrie = useCallback(
     (words: string[]) => {
       return trie.search(words);
     },
@@ -80,8 +80,8 @@ function useTrie() {
   );
 
   return {
-    passThrough,
-    search,
+    insertTrie,
+    searchTrie,
   };
 }
 
