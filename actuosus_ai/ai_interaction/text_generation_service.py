@@ -64,7 +64,9 @@ class TextGenerationService:
             # Check for eos token
             if prompt_tokens[0][-1] == self.tokenizer.eos_token_id:
                 break
-
+        # Remove beginning of text token if it exists
+        if result[0][0][0] == self.tokenizer.bos_token_id:
+            result = result[1:]
         return [
             [(self.tokenizer.decode(token), prob) for token, prob in alt_token_pairs]
             for alt_token_pairs in result

@@ -1,14 +1,16 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import WordDropdown from '@/app/models/text_generation/components/WordDropdown';
+import useTrie from '@/app/models/text_generation/hooks/useTrie';
 type textGenerationResponse = {
   response: Array<Array<[string, number]>>;
 };
 
 const WebSocketComponent = () => {
-  const [messages, setMessages] = useState<textGenerationResponse | null>(null);
+  const [messages, setMessages] = useState<Array<Array<[string, number]>>>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const ws = useRef<WebSocket | null>(null);
+  const { passThrough, search } = useTrie();
 
   useEffect(() => {
     // Create a new WebSocket connection
@@ -16,8 +18,9 @@ const WebSocketComponent = () => {
 
     // Handle incoming messages
     ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setMessages(data);
+      const data: textGenerationResponse = JSON.parse(event.data);
+      const newMessages = passThrough(data.response);
+      setMessages(newMessages);
     };
 
     // Handle connection close
@@ -41,7 +44,33 @@ const WebSocketComponent = () => {
   // Send message function
   const sendMessage = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      const message = JSON.stringify({ prompt: inputMessage, temperature: 1.5 });
+      const message = JSON.stringify({
+        prompt: inputMessage,
+        temperature: 0.5,
+      });
+      ws.current.send(message);
+      setInputMessage(''); // Clear input after sending
+    } else {
+      console.error('WebSocket connection is not open');
+    }
+  };
+
+  const OnWordClick = (index: number, word: string) => {
+    // Check if the word is in the trie
+    const prev_messages = messages
+      .slice(0, index)
+      .map((wordList) => wordList[0][0]);
+    const searchResults = search([...prev_messages, word]);
+    if (searchResults) {
+      setMessages(searchResults);
+      return;
+    }
+    const newMessage = prev_messages.join('') + word;
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const message = JSON.stringify({
+        prompt: newMessage,
+        temperature: 0.5,
+      });
       ws.current.send(message);
       setInputMessage(''); // Clear input after sending
     } else {
@@ -52,9 +81,14 @@ const WebSocketComponent = () => {
   return (
     <div>
       <h1>WebSocket Messages</h1>
-      <div className="flex flex-wrap gap-1">
-        {messages?.response.map((wordList, index) => (
-          <WordDropdown key={index} wordList={wordList} />
+      <div className="flex flex-wrap">
+        {messages.map((wordList, index) => (
+          <WordDropdown
+            key={index}
+            index={index}
+            wordList={wordList}
+            OnWordClick={OnWordClick}
+          />
         ))}
       </div>
 
