@@ -24,7 +24,7 @@ export default function DeleteDialog(props: {
           <div className="flex gap-4">
             <button onClick={props.onClose}>Cancel</button>
             <button className="text-error-600" onClick={props.onClick}>Delete all local files</button>
-            <button className="text-accent-300" onClick={props.onClick}>Only remove from the app</button>
+            {/*<button className="text-accent-300" onClick={props.onClick}>Only remove from the app</button>*/}
           </div>
         </DialogPanel>
       </div>

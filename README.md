@@ -1,7 +1,16 @@
 # Project Name
 
-![Feature Demo](https://your-video-url.com)  
+
+![Recording2024-10-20122344-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/fcdffccc-391d-4aa5-9aeb-044f184d33db)
+
+
 *A quick demo video showcasing the main feature of the project.*
+
+
+
+![video](https://github.com/user-attachments/assets/6eab937c-9d02-4f4a-9e7d-cd33ceebff58)
+A more detailed video showing the whole app
+
 ## Index
 - [Features](#features)
 - [Installation Guide](#installation-guide)
