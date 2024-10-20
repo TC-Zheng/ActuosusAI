@@ -68,6 +68,16 @@ By default, the GGUF models will only be run on cpu, to run GGUF models on GPU, 
 3. Run the script:
    ```bash
    ./start_dev.sh
+   
+4. Open the UI in browser:
+    - Go to http://localhost:3000/ to see the app.
+
+5. Quick start:
+    - You can start by typing this
+    ```bash
+    openai-community/gpt2 
+    ```
+    - to the download field and download this small model and chat with it.
 
 ## Roadmap
 - Feature 1: Add docker support and other things that would make this app easier to run for people.
