@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Activate Poetry shell
-echo "Activating Poetry shell..."
-poetry shell
-
 # Navigate to the backend directory and start the FastAPI server
 echo "Starting FastAPI backend..."
 cd actuosus_ai/app || exit

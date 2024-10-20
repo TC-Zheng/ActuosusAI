@@ -53,13 +53,19 @@ By default, the GGUF models will only be run on cpu, to run GGUF models on GPU, 
 1. Go to the project directory:
    ```bash
    cd ActuosusAI
-2. Run the script:
+2. Modify the .env file:
+   - Change the database_url and base_file_storage_path to your desired path.
+   - Add a huggingface_token if you want to download certain models on huggingface that need permissions.
+
+3. Run the script:
    ```bash
    ./start_dev.sh
+
 ## Roadmap
-- Feature 1: Add docker support for the project.
-- Feature 2: Able to add existing local models to use with the app.
+- Feature 1: Add docker support and other things that would make this app easier to run for people.
+- Feature 2: Let user able to add existing local models to use with the app.
 - Feature 3: Add chatting with instruction tuned models.
+- Please let me know if there are other features people like to see
 
 ## What is this project
 This is a personal hobby project I have with the purpose of learning and experimenting with ML models and my web development skill.
