@@ -1,8 +1,8 @@
 # Project Name
 
 
+![Recording2024-10-20122344-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/fcdffccc-391d-4aa5-9aeb-044f184d33db)
 
-![Recording2024-10-20122344-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/ca8e74d2-5668-4c70-9b23-da9fd2f9289e)
 
 *A quick demo video showcasing the main feature of the project.*
 
