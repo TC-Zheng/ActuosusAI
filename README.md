@@ -2,10 +2,15 @@
 
 
 
+![Recording2024-10-20122344-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/ca8e74d2-5668-4c70-9b23-da9fd2f9289e)
 
-
-![Feature Demo](https://github.com/user-attachments/assets/954d0247-985d-4873-96d5-4afe9abb5f49)  
 *A quick demo video showcasing the main feature of the project.*
+
+
+
+![video](https://github.com/user-attachments/assets/6eab937c-9d02-4f4a-9e7d-cd33ceebff58)
+A more detailed video showing the whole app
+
 ## Index
 - [Features](#features)
 - [Installation Guide](#installation-guide)
