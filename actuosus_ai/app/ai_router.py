@@ -51,21 +51,21 @@ class EditModelRequest(BaseModel):
 async def edit_model(
     ai_model_id: int,
     request: EditModelRequest,
-    language_model_service: AIModelStorageService = Depends(
+    ai_model_storage_service: AIModelStorageService = Depends(
         get_ai_model_storage_service
     ),
 ) -> StandardResponse:
     """
     Edit a model's name based on it's id
     """
-    dto = await language_model_service.get_model_by_id(ai_model_id)
+    dto = await ai_model_storage_service.get_model_by_id(ai_model_id)
     if dto:
         update_data = request.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(dto, key, value)
     else:
         raise NotFoundException("Model not found")
-    await language_model_service.update_model(dto)
+    await ai_model_storage_service.update_model(dto)
 
     return StandardResponse(success=True, message="Model name edited successfully")
 
@@ -73,14 +73,14 @@ async def edit_model(
 @router.post("/model/{ai_model_id}/copy/")
 async def copy_model(
     ai_model_id: int,
-    language_model_service: AIModelStorageService = Depends(
+    ai_model_storage_service: AIModelStorageService = Depends(
         get_ai_model_storage_service
     ),
 ) -> StandardResponse:
     """
     Copy a model based on it's id
     """
-    await language_model_service.copy_model_by_id(ai_model_id)
+    await ai_model_storage_service.copy_model_by_id(ai_model_id)
 
     return StandardResponse(success=True, message="Model copied successfully")
 
@@ -88,14 +88,14 @@ async def copy_model(
 @router.delete("/model/{ai_model_id}/")
 async def delete_model(
     ai_model_id: int,
-    language_model_service: AIModelStorageService = Depends(
+    ai_model_storage_service: AIModelStorageService = Depends(
         get_ai_model_storage_service
     ),
 ) -> StandardResponse:
     """
     Delete a model based on it's id
     """
-    await language_model_service.delete_model_by_id(ai_model_id)
+    await ai_model_storage_service.delete_model_by_id(ai_model_id)
 
     return StandardResponse(success=True, message="Model deleted successfully")
 
@@ -120,14 +120,14 @@ async def get_models(
     pipeline_tag: Optional[str] = None,
     order_by: Optional[str] = None,
     is_desc: Optional[bool] = True,
-    language_model_service: AIModelStorageService = Depends(
+    ai_model_storage_service: AIModelStorageService = Depends(
         get_ai_model_storage_service
     ),
 ) -> GetModelResponse:
     """
     Get models
     """
-    dtos = await language_model_service.get_models(
+    dtos = await ai_model_storage_service.get_models(
         limit, offset, name, pipeline_tag, order_by, is_desc
     )
 
@@ -150,3 +150,17 @@ async def search_hugging_face(
     """
     model_names = await download_ai_model_service.search_hub_with_name(model_name, 10)
     return SearchHuggingFaceResponse(model_names=model_names)
+
+class GGUFFileNamesResponse(BaseModel):
+    gguf_file_names: List[str]
+@router.get("/gguf/files/{ai_model_id}/")
+async def get_gguf_file_names(
+    ai_model_id: int,
+    ai_model_storage_service: AIModelStorageService = Depends(
+        get_ai_model_storage_service
+    ),
+) -> GGUFFileNamesResponse:
+    """
+    Get gguf file names for a model based on it's id
+    """
+    return GGUFFileNamesResponse(gguf_file_names=await ai_model_storage_service.get_all_gguf_files(ai_model_id))

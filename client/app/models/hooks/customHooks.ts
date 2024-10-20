@@ -145,3 +145,21 @@ export const useGetSearchHub = () => {
     searchError: error,
   };
 };
+
+export type GGUFFileNamesResponse = {
+  gguf_file_names: Array<string>;
+};
+
+export const useGetGGUFFileNames = () => {
+  const { fetchData, response, loading, error } =
+    useFetch<GGUFFileNamesResponse>();
+  const getGGUFFileNames = async (ai_model_id: number) => {
+    void fetchData(`http://127.0.0.1:8000/gguf/files/${ai_model_id}/`);
+  };
+  return {
+    getGGUFFileNames,
+    ggufFileNamesResponse: response,
+    ggufFileNamesLoading: loading,
+    ggufFileNamesError: error,
+  };
+};

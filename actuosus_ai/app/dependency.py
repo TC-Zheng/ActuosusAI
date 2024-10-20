@@ -21,8 +21,9 @@ def get_ai_download_service(
     ai_model_storage_service: AIModelStorageService = Depends(
         get_ai_model_storage_service
     ),
+    settings: Settings = Depends(get_settings),
 ) -> AIModelDownloadService:
-    return AIModelDownloadService(ai_model_storage_service)
+    return AIModelDownloadService(ai_model_storage_service, settings=settings)
 
 
 def get_text_generation_service(

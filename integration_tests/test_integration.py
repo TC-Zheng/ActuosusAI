@@ -182,5 +182,5 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_text_generation_service(self, ai_model_storage_service):
         # Arrange
-        dto = await ai_model_storage_service.get_models(name=MODEL_NAME_1)
+        dto = await ai_model_storage_service.get_models(name="distilbert")
         storage_path = dto[0].storage_path

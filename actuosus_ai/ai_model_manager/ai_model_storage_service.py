@@ -30,72 +30,48 @@ class AIModelStorageService:
     def _orm_to_dto(orm: AIModelORM) -> AIModelDTO:
         return AIModelDTO(**orm.__dict__)
 
-    async def _save_pretrained(
-        self, items: Any, storage_path: str, temp_path: str
-    ) -> None:
-        loop = asyncio.get_running_loop()
-        tasks = [
-            loop.run_in_executor(None, item.save_pretrained, temp_path)
-            for item in items
-        ]
-        await asyncio.gather(*tasks)
-
-        await self.async_session.commit()
-        await asyncio.get_running_loop().run_in_executor(
-            None, lambda: shutil.rmtree(storage_path, ignore_errors=True)
-        )
-        shutil.move(temp_path, storage_path)
-
-    async def add_new_model(
-        self, new_ai_model_dto: CreateNewAIModelDTO, *items: Any
-    ) -> None:
-        storage_path = os.path.join(
-            self.settings.base_file_storage_path, str(uuid.uuid4())
-        )
-
-        temp_path = storage_path + "_temp"
-
+    async def add_new_model(self, new_ai_model_dto: CreateNewAIModelDTO) -> None:
         try:
             # Save model to database
             self.async_session.add(
                 AIModelORM(
                     name=new_ai_model_dto.name,
-                    storage_path=storage_path,
+                    storage_path=new_ai_model_dto.storage_path,
                     pipeline_tag=new_ai_model_dto.pipeline_tag,
                 )
             )
 
-            # Save model and required tokenizer, processor, etc. to storage
-            await self._save_pretrained(items, storage_path, temp_path)
+            await self.async_session.commit()
 
         except Exception as e:
             # Rollback session and delete storage
-            loop = asyncio.get_running_loop()
-            await asyncio.gather(
-                loop.run_in_executor(
-                    None, lambda: shutil.rmtree(temp_path, ignore_errors=True)
+            await asyncio.get_running_loop().run_in_executor(
+                None,
+                lambda: shutil.rmtree(
+                    new_ai_model_dto.storage_path, ignore_errors=True
                 ),
-                self.async_session.rollback(),
             )
+            await self.async_session.rollback()
             raise InternalException(str(e))
 
     async def update_model(self, dto: AIModelDTO, *items: Any) -> None:
-        temp_path = dto.storage_path + "_temp"
-
         try:
             # Save model to database
             await self.async_session.merge(self._dto_to_orm(dto))
+            await self.async_session.commit()
             # Save model and required tokenizer, processor, etc to storage
-            await self._save_pretrained(items, dto.storage_path, temp_path)
+            loop = asyncio.get_running_loop()
+            tasks = [
+                loop.run_in_executor(
+                    None, lambda: item.save_pretrained(dto.storage_path)
+                )
+                for item in items
+            ]
+            await asyncio.gather(*tasks)
 
         except Exception as e:
             # Rollback session and delete storage
-            await asyncio.gather(
-                asyncio.get_running_loop().run_in_executor(
-                    None, lambda: shutil.rmtree(temp_path, ignore_errors=True)
-                ),
-                self.async_session.rollback(),
-            )
+            await self.async_session.rollback()
             raise InternalException(str(e))
 
     async def get_model_by_id(self, ai_model_id: int) -> Optional[AIModelDTO]:
@@ -185,5 +161,20 @@ class AIModelStorageService:
             else:
                 raise NotFoundException("Model not found")
 
+        except Exception as e:
+            raise InternalException(str(e))
+
+    async def get_all_gguf_files(self, ai_model_id: int) -> List[str]:
+        try:
+            model = await self.get_model_by_id(ai_model_id)
+            if model:
+                l = [
+                    os.path.basename(file)
+                    for file in os.listdir(model.storage_path)
+                    if file.endswith(".gguf")
+                ]
+                return l
+            else:
+                raise NotFoundException("Model not found")
         except Exception as e:
             raise InternalException(str(e))

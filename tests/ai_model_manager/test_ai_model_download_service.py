@@ -14,17 +14,20 @@ class TestAIModelDownloadService:
     def mocked_ai_model_storage_service(self, mocker):
         return mocker.AsyncMock()
 
+    @pytest.fixture
+    def mocked_settings(self, mocker):
+        return mocker.MagicMock(base_storage_path="some path")
+
     @pytest.mark.asyncio
     @patch.object(HfApi, "model_info")
-    @patch("transformers.AutoTokenizer.from_pretrained")
-    @patch("transformers.AutoModel.from_pretrained")
+    @patch('actuosus_ai.ai_model_manager.ai_model_download_service.snapshot_download')
     async def test_download_hugging_face_lm_success(
         self,
-        mocked_auto_model,
-        mocked_auto_tokenizer,
+        mocked_snapshot_download,
         mocked_model_info,
         mocker,
         mocked_ai_model_storage_service,
+        mocked_settings,
     ):
         # Arrange
         model_name = "some_model_name"
@@ -32,42 +35,13 @@ class TestAIModelDownloadService:
             pipeline_tag="some pipeline value"
         )
         mocked_ai_model_storage_service.add_new_model.return_value = None
-        service = AIModelDownloadService(mocked_ai_model_storage_service)
+        service = AIModelDownloadService(mocked_ai_model_storage_service, mocked_settings)
 
         # Act
         await service.download_lm_from_hugging_face(model_name)
 
         # Assert
-        mocked_auto_model.assert_called_once_with(model_name)
-        mocked_auto_tokenizer.assert_called_once_with(model_name)
-        mocked_ai_model_storage_service.add_new_model.assert_called_once()
-
-    @pytest.mark.asyncio
-    @patch.object(HfApi, "model_info")
-    @patch("transformers.AutoTokenizer.from_pretrained")
-    @patch("transformers.AutoModel.from_pretrained")
-    async def test_download_hugging_face_lm_default_path_success(
-        self,
-        mocked_auto_model,
-        mocked_auto_tokenizer,
-        mocked_model_info,
-        mocker,
-        mocked_ai_model_storage_service,
-    ):
-        # Arrange
-        model_name = "some_model_name"
-        mocked_model_info.return_value = mocker.MagicMock(
-            pipeline_tag="some pipeline value"
-        )
-        mocked_ai_model_storage_service.add_new_model.return_value = None
-        service = AIModelDownloadService(mocked_ai_model_storage_service)
-
-        # Act
-        await service.download_lm_from_hugging_face(model_name)
-
-        # Assert
-        mocked_auto_model.assert_called_once_with(model_name)
-        mocked_auto_tokenizer.assert_called_once_with(model_name)
+        mocked_snapshot_download.assert_called_once()
         mocked_ai_model_storage_service.add_new_model.assert_called_once()
 
     @pytest.mark.asyncio

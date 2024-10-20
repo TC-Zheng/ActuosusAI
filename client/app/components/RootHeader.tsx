@@ -2,7 +2,6 @@ import Link from 'next/link';
 
 const menuItems = [
   { label: `Models`, href: { pathname: '/models' } },
-  { label: 'Text Generation', href: { pathname: '/models/text_generation' } },
 ];
 export default function RootHeader() {
   return (

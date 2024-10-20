@@ -22,9 +22,6 @@ class WordListsTrie {
     for (const wordList of wordLists) {
       const repr = wordList[0][0];
       if (!current.children[repr]) {
-        for (const child in current.children) {
-          wordList.push([current.children[child].wordList[0][0], -1]);
-        }
         current.children[repr] = new TrieNode(wordList);
         results.push(wordList);
       } else {
@@ -57,6 +54,10 @@ class WordListsTrie {
     }
     return results;
   }
+
+  clear() {
+    this.root = new TrieNode();
+  }
 }
 
 // Custom hook to manage the Trie in state
@@ -79,9 +80,14 @@ function useTrie() {
     [trie]
   );
 
+  const clearTrie = useCallback(() => {
+    trie.clear();
+  }, [trie]);
+
   return {
     insertTrie,
     searchTrie,
+    clearTrie,
   };
 }
 

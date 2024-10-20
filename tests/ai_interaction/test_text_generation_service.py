@@ -23,8 +23,6 @@ class TestTextGenerationService:
         # Mock the tokenizer and model
         mocked_model = mocker.MagicMock(name="mocked_model")
         mocked_auto_model.from_pretrained.return_value = mocked_model
-        model_on_device = mocker.MagicMock(name="model_on_device")
-        mocked_model.to.return_value = model_on_device
         mocked_dto = mocker.MagicMock(storage_path="dummy_path")
         mocked_ai_model_storage_service.get_model_by_id.return_value = mocked_dto
 
@@ -36,7 +34,7 @@ class TestTextGenerationService:
         mock_output = mocker.MagicMock(
             logits=torch.randn(1, 10, 50257), name="mock_output"
         )
-        model_on_device.return_value = mock_output
+        mocked_model.return_value = mock_output
 
         # Define the input tokens
         tokens = torch.tensor([[50256]])  # Example token tensor
