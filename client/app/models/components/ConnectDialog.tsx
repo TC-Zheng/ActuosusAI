@@ -48,6 +48,7 @@ export default function ConnectDialog({
                       </option>
                     ))}
                   </select>
+                  {/*<p>You selected {selectedGGUFFileName}</p>*/}
                 </>
               ) : (
                 <>
@@ -79,7 +80,9 @@ export default function ConnectDialog({
                     ai_model_id: String(selectedModel?.ai_model_id),
                     quantization:
                       ggufFileNames.length > 0 ? 'gguf' : selectedQuantization,
-                    gguf_file_name: selectedGGUFFileName,
+                    gguf_file_name:
+                      selectedGGUFFileName ||
+                      (ggufFileNames.length > 0 && ggufFileNames[0]),
                   },
                 }}
               >
