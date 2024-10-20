@@ -28,12 +28,12 @@ export default function ConnectDialog({
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-        <DialogPanel className="max-w-lg space-y-4 border bg-background-700 p-12 text-accent-50">
+        <DialogPanel className="max-w-lg space-y-4 border bg-background-200 p-12">
           <DialogTitle className="font-bold text-center">
             Connecting to {selectedModel?.name}
           </DialogTitle>
           <div className="flex gap-4 text-center">
-            <div className="text-secondary-200">
+            <div className="">
               {ggufFileNames?.length > 0 ? (
                 <>
                   <label>Choose a gguf file to load the model</label>
@@ -72,7 +72,7 @@ export default function ConnectDialog({
               )}
 
               <Link
-                className="text-accent-200 text-center"
+                className="text-center font-bold"
                 href={{
                   pathname: '/models/text_generation',
                   query: {

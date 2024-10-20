@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Tuple, List, Optional
 
 import torch
@@ -26,7 +25,7 @@ class TextGenerationService:
         self.estimated_vram = None
 
     async def load_model(
-        self, ai_model_id: int, quantization: Optional[str] = None, gguf_file_name: Optional[str] = None):
+        self, ai_model_id: int, quantization: Optional[str] = None, gguf_file_name: Optional[str] = None) -> None:
         initial_ram, initial_vram = get_memory_footprint()
         dto = await self.storage_service.get_model_by_id(ai_model_id)
         self.model_name = dto.name

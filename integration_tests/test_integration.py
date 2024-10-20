@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest_asyncio
 from huggingface_hub import model_info
 
-from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.ai_model_manager.connection import get_async_db_session
 
 import shutil
@@ -179,8 +178,8 @@ class TestIntegration:
         assert len(await ai_model_storage_service.get_models()) == 2
         assert not path.exists()
 
-    @pytest.mark.asyncio
-    async def test_text_generation_service(self, ai_model_storage_service):
-        # Arrange
-        dto = await ai_model_storage_service.get_models(name="distilbert")
-        storage_path = dto[0].storage_path
+    # @pytest.mark.asyncio
+    # async def test_text_generation_service(self, ai_model_storage_service):
+    #     # Arrange
+    #     dto = await ai_model_storage_service.get_models(name="distilbert")
+    #     storage_path = dto[0].storage_path

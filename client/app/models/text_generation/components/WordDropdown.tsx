@@ -51,19 +51,19 @@ export default function WordDropdown({
           className={
             'hover:text-primary-400 ' +
             (isOpen
-              ? 'text-accent-200'
+              ? 'text-accent-600'
               : wordList.length > 1 && wordList[1][1] === -1
-                ? 'text-secondary-200'
+                ? 'text-secondary-600'
                 : '')
           }
         >
           {wordList[0][0]}
         </button>
         {isOpen && (
-          <div className="z-10 absolute bg-background-500 mt-2 w-32 origin-top-right backdrop-blur-md border border-gray-200 divide-y divide-gray-100 rounded-md shadow-lg focus:outline-none flex flex-col">
+          <div className="z-10 absolute bg-background-300 mt-2 w-32 origin-top-right backdrop-blur-md border border-gray-200 divide-y divide-gray-100 rounded-md shadow-lg focus:outline-none flex flex-col">
             {!containPreviousSelected && (
               <button
-                className="bg-background-500 cursor-pointer hover:text-secondary-200 rounded-md"
+                className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
                 onClick={() => handleRefresh(index)}
               >
                 Refresh
@@ -72,7 +72,7 @@ export default function WordDropdown({
             {wordList.map((word) => (
               <button
                 key={word[0]}
-                className="bg-background-500 cursor-pointer hover:text-secondary-200 rounded-md"
+                className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
                 onClick={() => onWordPick(index, word[0])}
               >
                 {formatWordText(word)}

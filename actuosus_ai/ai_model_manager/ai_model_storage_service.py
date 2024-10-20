@@ -168,12 +168,11 @@ class AIModelStorageService:
         try:
             model = await self.get_model_by_id(ai_model_id)
             if model:
-                l = [
+                return [
                     os.path.basename(file)
                     for file in os.listdir(model.storage_path)
                     if file.endswith(".gguf")
                 ]
-                return l
             else:
                 raise NotFoundException("Model not found")
         except Exception as e:

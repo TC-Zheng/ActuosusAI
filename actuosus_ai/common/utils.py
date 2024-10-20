@@ -1,7 +1,7 @@
 import psutil
 import pynvml
 
-def get_memory_footprint():
+def get_memory_footprint() -> tuple[float, float]:
     # Initialize pynvml to interact with NVIDIA GPUs
     pynvml.nvmlInit()
 

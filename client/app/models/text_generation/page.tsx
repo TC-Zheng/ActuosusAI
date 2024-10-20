@@ -30,6 +30,8 @@ const WebSocketComponent = () => {
   const isLoadingModel = useRef<boolean>(true);
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
   const { insertTrie, searchTrie, clearTrie } = useTrie();
+  const [temperature, setTemperature] = useState<number>(1);
+  const [maxNewTokens, setMaxNewTokens] = useState<number>(100);
   const searchParams = useSearchParams();
   const queryString = new URLSearchParams({
     ai_model_id: `${searchParams.get('ai_model_id')}`,
@@ -78,12 +80,12 @@ const WebSocketComponent = () => {
 
   // Send message function
   const sendMessage = useCallback(
-    (message: string, max_new_tokens = 50) => {
+    (message: string, temperature: number, maxNewTokens: number) => {
       console.log('Sending message:', message);
       const messageWithPayload = JSON.stringify({
         prompt: message,
-        temperature: 1,
-        max_new_tokens: max_new_tokens,
+        temperature: temperature,
+        max_new_tokens: maxNewTokens,
       });
       sendMessageToWebsocket(messageWithPayload);
       setInputMessage(''); // Clear input after sending
@@ -115,7 +117,7 @@ const WebSocketComponent = () => {
           [displayedWordProbLists[index][0][0], -1],
         ],
       ]);
-      sendMessage(newMessage);
+      sendMessage(newMessage, temperature, maxNewTokens);
     },
     [displayedWordProbLists, originalPrompt, searchTrie, sendMessage]
   );
@@ -128,6 +130,7 @@ const WebSocketComponent = () => {
             .slice(0, index)
             .map((wpList) => wpList[0][0])
             .join(''),
+        temperature,
         1
       );
     },
@@ -138,28 +141,85 @@ const WebSocketComponent = () => {
     setGeneratingResponse(true);
     setInputMessage('');
     setDisplayedWordProbLists([]);
+    setOpenedWord(-1);
     clearTrie();
-    sendMessage(inputMessage);
+    sendMessage(inputMessage, temperature, maxNewTokens);
   };
 
   return (
     <>
       {isLoadingModel.current && <Loader />}
       {!isLoadingModel.current && (
-        <div className="flex flex-row h-screen bg-backgroud-600">
-          <div className="flex flex-col bg-background-900 w-64 min-w-64">
-            <h1>{modelInfo?.name}</h1>
-            <h2>
-              Estimated {Math.max(0, modelInfo?.estimated_ram ?? 0).toFixed(2)}{' '}
-              GB ram
+        <div className="flex flex-row h-screen w-full">
+          <div className="flex flex-col bg-background-400 max-w-56 min-w-56 text-center">
+            <button onClick={() => window.history.back()} className="mb-8 mt-2">
+              Go Back
+            </button>
+            <h2 className="font-bold text-md text-primary-900">Model name</h2>
+            <p className="text-primary-700 text-sm">{modelInfo?.name}</p>
+            <h2 className="font-bold text-l text-primary-900">
+              Estimated RAM usage:
             </h2>
-            <h2>
-              Estimated {Math.max(0, modelInfo?.estimated_vram ?? 0).toFixed(2)}{' '}
-              GB vram
+            <p className="text-primary-700 text-sm">
+              {Math.max(0, modelInfo?.estimated_ram ?? 0).toFixed(2)} GB
+            </p>
+            <h2 className="font-bold text-md text-primary-900">
+              Estimated VRAM usage:
             </h2>
-            <h2>{isConnected ? 'Connected' : 'Error: Not connected'}</h2>
+            <p className="text-primary-700 text-sm">
+              {Math.max(0, modelInfo?.estimated_vram ?? 0).toFixed(2)} GB
+            </p>
+            <h2 className="font-bold text-md text-primary-900">
+              Connection Status
+            </h2>
+            <p className="text-primary-700 text-sm">
+              {isConnected ? 'Connected' : 'Error: Not connected'}
+            </p>
+            <h2 className="font-bold text-md text-primary-900">Temperature</h2>
+            <div className="flex flex-col items-center mb-2 mx-2">
+              <input
+                type="range"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                className="flex-grow"
+              />
+              <input
+                type="number"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                className="ml-2 w-12 text-center bg-background-400"
+              />
+            </div>
+            <h2 className="font-bold text-md text-primary-900">
+              Max New Tokens
+            </h2>
+            <div className="flex items-center mb-2 mx-2 flex-col">
+              <input
+                type="range"
+                min="1"
+                max="200"
+                value={maxNewTokens}
+                onChange={(e) => setMaxNewTokens(parseInt(e.target.value))}
+                className="flex-grow"
+              />
+              <input
+                type="number"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value={maxNewTokens}
+                onChange={(e) => setMaxNewTokens(parseInt(e.target.value))}
+                className="ml-2 w-12 text-center bg-background-400"
+              />
+            </div>
           </div>
-          <div>
+          <div className="flex flex-col w-full">
             <div className="flex flex-wrap m-20">
               <text>{originalPrompt}</text>
               {displayedWordProbLists.map((wordProbList, index) => (
@@ -178,13 +238,27 @@ const WebSocketComponent = () => {
                 />
               ))}
             </div>
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Type your message"
-            />
-            <button onClick={onSendClick}>Send Message</button>
+            <div className="mt-auto w-full flex flex-row p-8 pr-16 relative">
+              <textarea
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Type your message"
+                className="w-full resize-none overflow-hidden pr-16"
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    onSendClick();
+                  }
+                }}
+              />
+              <button
+                onClick={onSendClick}
+                className="absolute right-16 bottom-8 mr-2"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
       )}

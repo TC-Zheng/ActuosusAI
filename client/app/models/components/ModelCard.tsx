@@ -18,7 +18,7 @@ export default function ModelCard({
   onConnectClick,
 }: ModelCardProps) {
   return (
-    <p className="relative flex flex-col bg-background-600 border border-secondary-200 h-48 w-64 text-sm m-2">
+    <p className="relative flex flex-col bg-background-300 border border-secondary-700 h-48 w-64 text-sm m-4 rounded-md">
       <div className="absolute top-2 right-2 flex space-x-1">
         <button
           onClick={() => onCopyClick(modelDetails)}
@@ -26,12 +26,12 @@ export default function ModelCard({
         >
           <CopyIcon className="w-6 h-6" />
         </button>
-        <button
-          onClick={() => onEditClick(modelDetails)}
-          className="hover:scale-110 transition-transform duration-200 cursor-pointer"
-        >
-          <EditIcon className="w-5 h-5" />
-        </button>
+        {/*<button*/}
+        {/*  onClick={() => onEditClick(modelDetails)}*/}
+        {/*  className="hover:scale-110 transition-transform duration-200 cursor-pointer"*/}
+        {/*>*/}
+        {/*  <EditIcon className="w-5 h-5" />*/}
+        {/*</button>*/}
       </div>
       <div className="absolute top-2 left-2">
         <button
@@ -41,7 +41,7 @@ export default function ModelCard({
           <DeleteIcon className="w-6 h-6" />
         </button>
       </div>
-      <h2 className="text-primary-200 text-center mt-8 mb-2">
+      <h2 className="text-secondary-600 text-center mt-8 mb-2">
         {modelDetails.name}
       </h2>
       <p className="text-primary-400 text-center mb-1">
@@ -49,7 +49,7 @@ export default function ModelCard({
       </p>
       {modelDetails.pipeline_tag === 'text-generation' && (
         <button
-          className="text-center mb-1"
+          className="text-center mb-5 mt-auto font-bold text-secondary-900"
           onClick={() => onConnectClick(modelDetails)}
         >
           Connect

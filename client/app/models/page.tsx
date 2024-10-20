@@ -21,7 +21,6 @@ export default function ModelsPage() {
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [openConnectDialog, setOpenConnectDialog] = useState<boolean>(false);
   const [selectedSearchName, setSelectedSearchName] = useState<string>('');
-  const router = useRouter();
 
   const { getModelDetails, modelDetailsResponse, modelDetailsLoading } =
     useGetModelDetails();

@@ -26,17 +26,17 @@ export default function SearchDownloadComboBox({
   downloadModelLoading,
 }: SearchDownloadComboBoxProps) {
   return (
-    <div className="mx-auto h-12 w-96 pt-5">
+    <div className="mx-auto h-12 w-96 pt-5 flex flex-col justify-center">
       <Combobox
         value={selectedSearchName}
         onChange={(value) => setSelectedSearchName(value ?? '')}
         // onClose={() => setQuery('')}
       >
-        <div className="flex flex-row">
-          <div className="relative w-64">
+        <div className="relative flex flex-col mt-4">
+          <div className="relative w-full justify-center">
             <ComboboxInput
               className={clsx(
-                'w-full rounded-lg border-none bg-white/5 py-1.5 pr-8 pl-3 text-sm/6 text-white',
+                'w-full rounded-lg border-secondary-700 bg-primary-100 py-1.5 pr-8 pl-3 text-sm/6',
                 'focus:outline-none data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-white/25'
               )}
               displayValue={(input: string) => input}
@@ -51,33 +51,16 @@ export default function SearchDownloadComboBox({
                 setSelectedSearchName('');
               }}
             >
-              <CloseIcon className="fill-primary-500" />
+              <CloseIcon className="fill-primary-700" />
             </button>
           </div>
-          <button
-            onClick={onDownloadModelClick}
-            className={clsx(
-              'flex flex-row px-4 py-0.5 bg-background-500 text-primary-200 rounded-md',
-              downloadModelLoading ? 'cursor-not-allowed' : 'cursor-pointer'
-            )}
-            disabled={downloadModelLoading}
-          >
-            {downloadModelLoading ? (
-              <>
-                <LoaderIcon className="h-4 w-4 animate-spin my-2 mr-2" />
-                Downloading...{' '}
-              </>
-            ) : (
-              <>Download</>
-            )}
-          </button>
         </div>
 
         <ComboboxOptions
           anchor="bottom"
           transition
           className={clsx(
-            'w-[var(--input-width)] rounded-xl border border-white/5 bg-white/5 p-1 [--anchor-gap:var(--spacing-1)] empty:invisible',
+            'w-[var(--input-width)] rounded-xl bg-primary-200 p-1 [--anchor-gap:var(--spacing-1)] empty:invisible',
             'transition duration-100 ease-in data-[leave]:data-[closed]:opacity-0',
             'bg-opacity-50 backdrop-blur-md'
           )}
@@ -86,13 +69,30 @@ export default function SearchDownloadComboBox({
             <ComboboxOption
               key={name}
               value={name}
-              className="group flex cursor-pointer items-center gap-2 rounded-lg py-1.5 px-3 select-none data-[focus]:bg-white/10"
+              className="group flex cursor-pointer items-center gap-2 rounded-lg py-1.5 px-3 select-none data-[focus]:bg-primary-300"
             >
-              <div className="text-sm/6 text-white">{name}</div>
+              <div className="text-sm/6 text-primary-800">{name}</div>
             </ComboboxOption>
           ))}
         </ComboboxOptions>
       </Combobox>
+      <button
+        onClick={onDownloadModelClick}
+        className={clsx(
+          'flex flex-row px-4 py-0.5 bg-background-500 text-primary-200 rounded-md mx-auto text-center mt-2',
+          downloadModelLoading ? 'cursor-not-allowed' : 'cursor-pointer'
+        )}
+        disabled={downloadModelLoading}
+      >
+        {downloadModelLoading ? (
+          <>
+            <LoaderIcon className="h-4 w-4 animate-spin my-2 mr-2 fill-current text-primary-100" />
+            Downloading...{' '}
+          </>
+        ) : (
+          <>Download</>
+        )}
+      </button>
     </div>
   );
 }
