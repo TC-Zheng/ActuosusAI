@@ -2,7 +2,15 @@
 
 ![Feature Demo](https://your-video-url.com)  
 *A quick demo video showcasing the main feature of the project.*
-
+## Index
+- [Features](#features)
+- [Installation Guide](#installation-guide)
+  - [Prerequisites](#prerequisites)
+  - [Installation Steps](#installation-steps)
+  - [GPU support for GGUF models](#gpu-support-for-gguf-models)
+- [How to run the project](#how-to-run-the-project)
+- [Roadmap](#roadmap)
+- [What is this project](#what-is-this-project)
 ## Features
 
 - Feature 1: Download and manage models from hugging face
