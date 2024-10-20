@@ -1,8 +1,8 @@
 import asyncio
+import os
 from typing import List
 
-from transformers import AutoModel, AutoTokenizer
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, snapshot_download
 
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
 from actuosus_ai.ai_model_manager.dto import CreateNewAIModelDTO
@@ -11,29 +11,36 @@ from actuosus_ai.common.actuosus_exception import (
     NotFoundException,
     NetworkException,
 )
+from actuosus_ai.common.settings import Settings
 
 
 class AIModelDownloadService:
-    def __init__(self, language_model_service: AIModelStorageService):
+    def __init__(
+        self, language_model_service: AIModelStorageService, settings: Settings
+    ):
         self.language_model_service = language_model_service
+        self.settings = settings
 
     async def download_lm_from_hugging_face(self, model_name: str) -> None:
         try:
-            loop = asyncio.get_running_loop()
-            model, tokenizer = await asyncio.gather(
-                loop.run_in_executor(None, AutoModel.from_pretrained, model_name),
-                loop.run_in_executor(None, AutoTokenizer.from_pretrained, model_name),
-            )
             api = HfApi()
             pipeline_tag = api.model_info(model_name).pipeline_tag
-            # Save model and tokenizer to storage
+            storage_path = os.path.join(
+                self.settings.base_file_storage_path, model_name
+            )
+            while os.path.exists(storage_path):
+                storage_path = os.path.join(storage_path, "_copy")
+            await asyncio.get_running_loop().run_in_executor(
+                None,
+                lambda: snapshot_download(repo_id=model_name, local_dir=storage_path),
+            )
+            # Add model and tokenizer to db
             await self.language_model_service.add_new_model(
                 CreateNewAIModelDTO(
                     name=model_name,
                     pipeline_tag=pipeline_tag,
+                    storage_path=storage_path,
                 ),
-                model,
-                tokenizer,
             )
 
         except Exception as e:

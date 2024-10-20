@@ -2,7 +2,8 @@
 import ModelCard from '@/app/models/components/ModelCard';
 import Loader from '@/app/components/Loader';
 import {
-  useDeleteModel,
+  ModelDetails,
+  useDeleteModel, useGetGGUFFileNames,
   useGetModelDetails,
   useGetSearchHub,
   usePostCopyModel,
@@ -12,10 +13,13 @@ import React, { useEffect, useState } from 'react';
 import { success_toast, useDebounce, warning_toast } from '@/app/utils/utils';
 import DeleteDialog from '@/app/models/components/DeleteDialog';
 import SearchDownloadComboBox from '@/app/models/components/SearchDownloadComboBox';
+import { useRouter } from 'next/navigation';
+import ConnectDialog from '@/app/models/components/ConnectDialog';
 
 export default function ModelsPage() {
-  const [selectedModel, setSelectedModel] = useState<number>(0);
+  const [selectedModel, setSelectedModel] = useState<ModelDetails | null>(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
+  const [openConnectDialog, setOpenConnectDialog] = useState<boolean>(false);
   const [selectedSearchName, setSelectedSearchName] = useState<string>('');
 
   const { getModelDetails, modelDetailsResponse, modelDetailsLoading } =
@@ -31,6 +35,8 @@ export default function ModelsPage() {
     usePostDownload();
   const { getSearchHub, searchResponse } = useGetSearchHub();
   const debouncedSearchHub = useDebounce(getSearchHub, 300);
+
+  const { getGGUFFileNames, ggufFileNamesResponse } = useGetGGUFFileNames();
 
   // Fetch model details on page load
   useEffect(() => {
@@ -57,28 +63,39 @@ export default function ModelsPage() {
     }
   }, [downloadModelResponse, getModelDetails]);
 
-  const handleCopy = (ai_model_id: number) => {
+  useEffect(() => {
+    if (ggufFileNamesResponse) {
+      setOpenConnectDialog(true);
+    }
+  }, [ggufFileNamesResponse]);
+
+  const handleCopy = (modelDetails: ModelDetails) => {
     if (copyModelLoading) {
       warning_toast(
         'Currently processing another copy request, please wait for it to finish'
       );
     } else {
-      void postCopyModel(ai_model_id);
+      void postCopyModel(modelDetails.ai_model_id);
     }
   };
-  const handleEdit = (ai_model_id: number) => {
-    console.log(`Edit ${ai_model_id}`);
+  const handleEdit = (modelDetails: ModelDetails) => {
+    console.log(`Edit ${modelDetails.ai_model_id}`);
   };
-  const handleDelete = (ai_model_id: number) => {
+  const handleDelete = (modelDetails: ModelDetails) => {
     if (deleteModelLoading) {
       warning_toast(
         'Currently processing another delete request, please wait for it to finish'
       );
     } else {
       setOpenDeleteDialog(true);
-      setSelectedModel(ai_model_id);
+      setSelectedModel(modelDetails);
     }
   };
+  const handleConnect = (modelDetails: ModelDetails) => {
+    void getGGUFFileNames(modelDetails.ai_model_id);
+    setSelectedModel(modelDetails);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const trimmedInput = e.target.value.trim();
     if (trimmedInput) {
@@ -102,30 +119,31 @@ export default function ModelsPage() {
       {!modelDetailsLoading && (
         <>
           <h1 className="text-2xl text-center mt-10">Model List</h1>
-          <div className="flex flex-wrap justify-center">
-            {(modelDetailsResponse?.models ?? []).map(
-              ({ name, pipeline_tag, ai_model_id, created_at, updated_at }) => (
-                <ModelCard
-                  key={ai_model_id}
-                  name={name}
-                  pipeline_tag={pipeline_tag}
-                  ai_model_id={ai_model_id}
-                  created_at={created_at}
-                  updated_at={updated_at}
-                  handleCopy={handleCopy}
-                  handleEdit={handleEdit}
-                  handleDelete={handleDelete}
-                />
-              )
-            )}
+          <div className="flex flex-wrap justify-center m-10">
+            {(modelDetailsResponse?.models ?? []).map((modelDetails) => (
+              <ModelCard
+                key={modelDetails.ai_model_id}
+                modelDetails={modelDetails}
+                onCopyClick={handleCopy}
+                onEditClick={handleEdit}
+                onDeleteClick={handleDelete}
+                onConnectClick={handleConnect}
+              />
+            ))}
           </div>
           <DeleteDialog
             open={openDeleteDialog}
             onClose={() => setOpenDeleteDialog(false)}
             onClick={() => {
               setOpenDeleteDialog(false);
-              void deleteModel(selectedModel);
+              void deleteModel(selectedModel!.ai_model_id);
             }}
+          />
+          <ConnectDialog
+            open={openConnectDialog}
+            onClose={() => setOpenConnectDialog(false)}
+            selectedModel={selectedModel!}
+            ggufFileNames={ggufFileNamesResponse?.gguf_file_names ?? []}
           />
         </>
       )}

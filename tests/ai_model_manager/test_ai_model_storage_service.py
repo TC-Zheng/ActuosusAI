@@ -48,38 +48,25 @@ class TestAIModelStorageService:
         )
 
     @pytest.mark.asyncio
-    @patch("shutil.move")
     async def test_add_new_model_success(
         self,
-        mocked_move,
         mocked_settings,
         mocked_async_session,
-        mocked_model,
-        mocked_tokenizer,
         example_create_model_dto,
     ):
         # Arrange
         service = AIModelStorageService(mocked_settings, mocked_async_session)
 
         # Act
-        await service.add_new_model(
-            example_create_model_dto, mocked_model, mocked_tokenizer
-        )
+        await service.add_new_model(example_create_model_dto)
 
         # Assert
         assert mocked_async_session.add.call_count == 1
         assert mocked_async_session.commit.call_count == 1
-        mocked_model.save_pretrained.assert_called_once()
-        mocked_tokenizer.save_pretrained.assert_called_once()
-        mocked_move.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("shutil.rmtree")
-    @patch("shutil.move")
     async def test_update_model_success(
         self,
-        mocked_move,
-        mocked_rmtree,
         mocked_settings,
         mocked_async_session,
         mocked_model,
@@ -95,14 +82,8 @@ class TestAIModelStorageService:
         # Assert
         mocked_async_session.merge.assert_called_once()
         mocked_async_session.commit.assert_called_once()
-        mocked_move.assert_called_once_with(
-            "some storage path 1_temp", "some storage path 1"
-        )
-        mocked_rmtree.assert_called_once_with("some storage path 1", ignore_errors=True)
-        mocked_model.save_pretrained.assert_called_once_with("some storage path 1_temp")
-        mocked_tokenizer.save_pretrained.assert_called_once_with(
-            "some storage path 1_temp"
-        )
+        mocked_model.save_pretrained.assert_called_once()
+        mocked_tokenizer.save_pretrained.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_model_by_id_success(
@@ -178,17 +159,13 @@ class TestAIModelStorageService:
         mock_rmtree.assert_called_once_with("some storage path 1", ignore_errors=True)
 
     @pytest.mark.asyncio
-    @patch("shutil.move")
     @patch("shutil.rmtree")
     async def test_add_model_fail_rollback(
         self,
         mock_rmtree,
-        mocked_move,
         mocker,
         mocked_settings,
         mocked_async_session,
-        mocked_model,
-        mocked_tokenizer,
         example_create_model_dto,
     ):
         # Arrange
@@ -200,50 +177,17 @@ class TestAIModelStorageService:
         # Act
         with pytest.raises(InternalException):
             await service.add_new_model(
-                example_create_model_dto, mocked_model, mocked_tokenizer
+                example_create_model_dto
             )
 
         # Assert
         mocked_async_session.rollback.assert_called_once()
         mock_rmtree.assert_called_once()
-        mocked_move.assert_not_called()
-
-    @pytest.mark.asyncio
-    @patch("shutil.move")
-    @patch("shutil.rmtree")
-    async def test_save_pretrained_fail_rollback(
-        self,
-        mock_rmtree,
-        mocked_move,
-        mocker,
-        mocked_settings,
-        mocked_async_session,
-        mocked_model,
-        mocked_tokenizer,
-        example_create_model_dto,
-    ):
-        # Arrange
-        mocked_model.save_pretrained = mocker.MagicMock(
-            side_effect=Exception("This is a test exception")
-        )
-        service = AIModelStorageService(mocked_settings, mocked_async_session)
-
-        # Act
-        with pytest.raises(InternalException):
-            await service.add_new_model(
-                example_create_model_dto, mocked_model, mocked_tokenizer
-            )
-
-        # Assert
-        mocked_async_session.rollback.assert_called_once()
-        mock_rmtree.assert_called_once()
-        mocked_move.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("shutil.rmtree")
     async def test_update_model_fail_rollback(
         self,
-        mock_rmtree,
         mocker,
         mocked_settings,
         mocked_async_session,
@@ -263,9 +207,6 @@ class TestAIModelStorageService:
 
         # Assert
         mocked_async_session.rollback.assert_called_once()
-        mock_rmtree.assert_called_once_with(
-            "some storage path 1_temp", ignore_errors=True
-        )
 
     @pytest.mark.asyncio
     async def test_get_model_by_id_throws_internal_exception(

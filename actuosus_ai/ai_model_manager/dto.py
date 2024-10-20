@@ -14,3 +14,4 @@ class AIModelDTO(BaseModel):
 class CreateNewAIModelDTO(BaseModel):
     name: str = Field(..., min_length=1)
     pipeline_tag: str = Field(..., min_length=1)
+    storage_path: str

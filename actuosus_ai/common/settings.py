@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
 load_dotenv(override=True)
 settings = Settings()  # type: ignore
-if settings.huggingface_token:
+if settings.huggingface_token and settings.huggingface_token.strip():
     login(settings.huggingface_token)
 
 

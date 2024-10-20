@@ -3,10 +3,12 @@ import uvicorn
 from starlette.middleware.cors import CORSMiddleware
 
 from actuosus_ai.app.ai_router import router as ai_router
+from actuosus_ai.app.ai_interaction_router import router as ai_interaction_router
 from actuosus_ai.app.exception_handler import CustomExceptionMiddleware
 
 app = FastAPI()
 app.include_router(ai_router)
+app.include_router(ai_interaction_router)
 
 # Add CORS middleware
 app.add_middleware(

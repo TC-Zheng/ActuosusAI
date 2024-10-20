@@ -165,4 +165,4 @@ class TestAIRouter:
 
         # Assert
         assert response.status_code == 200
-        assert response.json()['model_names'] == ["model1", "model2"]
+        assert response.json()["model_names"] == ["model1", "model2"]

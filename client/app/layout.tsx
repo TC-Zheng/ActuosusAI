@@ -16,8 +16,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="text-2xl h-full">
-      <body className={`antialiased h-full bg-background-800 text-primary-200`}>
-        <RootHeader />
+      <body className={`antialiased h-full bg-background-200 text-primary-950`}>
+        {/*<RootHeader />*/}
         <ToastContainer />
         <main>{children}</main>
       </body>
