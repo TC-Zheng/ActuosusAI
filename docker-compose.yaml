@@ -15,9 +15,6 @@ services:
               count: all
               capabilities: [ gpu ]
     environment:
-      - PYTHONUNBUFFERED=1
-      - PIP_DEFAULT_TIMEOUT=100
-      - PIP_MAX_RETRIES=10
       - DATABASE_URL=sqlite+aiosqlite:////volume/default.db
       - BASE_FILE_STORAGE_PATH=/volume/models
       - DEBUG_MODE=True

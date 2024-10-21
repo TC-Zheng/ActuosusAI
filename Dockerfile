@@ -17,8 +17,11 @@ RUN apt-get update && apt-get install -y \
 # Install Python 3.12
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_VERSION=1.6.1
+    POETRY_HOME=/opt/poetry \
+    POETRY_VERSION=1.6.1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    PIP_MAX_RETRIES=10
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -51,6 +54,9 @@ RUN poetry config virtualenvs.create false && \
     poetry install --no-dev --no-interaction --no-ansi || \
     (sleep 5 && poetry config virtualenvs.create false && \
      poetry install --no-dev --no-interaction --no-ansi)
+
+# Install llama-cpp-python with CUDA support
+RUN CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
 
 # Copy the rest of the backend project
 COPY actuosus_ai ./
