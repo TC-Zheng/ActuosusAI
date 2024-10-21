@@ -14,9 +14,11 @@ A more detailed video showing the whole app
 ## Index
 - [Features](#features)
 - [Installation Guide](#installation-guide)
-  - [Prerequisites](#prerequisites)
-  - [Installation Steps](#installation-steps)
-  - [GPU support for GGUF models](#gpu-support-for-gguf-models)
+  - [Quick Start With Docker](#quick-start-with-docker)
+  - [Install the project without Docker](#install-the-project-without-docker)
+    - [Prerequisites](#prerequisites)
+    - [Installation Steps](#installation-steps)
+    - [GPU support for GGUF models](#gpu-support-for-gguf-models)
 - [How to run the project](#how-to-run-the-project)
 - [Roadmap](#roadmap)
 - [What is this project](#what-is-this-project)
@@ -29,6 +31,24 @@ A more detailed video showing the whole app
 
 ## Installation Guide
 
+## Quick Start With Docker
+1. Install [Docker](https://www.docker.com/)
+2. Clone the repo:
+   ```bash
+   git clone https://github.com/TC-Zheng/ActuosusAI.git
+3. Go to the project directory:
+   ```bash
+    cd ActuosusAI
+4. (Optional) Add a Huggingface token in the docker-compose.yml file
+- You only need this if you want to download models that require permissions
+- Open the docker-compose.yml file
+- Search for HUGGINGFACE_TOKEN=
+- Add your huggingface token after the equal sign without any quotes 
+
+5. Run the following command:
+   ```bash
+   docker-compose up --build
+## Install the project without Docker
 ### Prerequisites
 
 - Install [Node.js](https://nodejs.org/) (v20.18.0 or higher)
