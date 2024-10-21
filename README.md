@@ -97,6 +97,17 @@ By default, the GGUF models will only be run on cpu, to run GGUF models on GPU, 
 3. Run the script:
    ```bash
    ./start_dev.sh
+
+4. Or alternatively, you can
+   -  go to actuosus_ai/app and run
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+   - go to client and run
+   ```bash
+   npm run dev
+   ```
    
 4. Open the UI in browser:
     - Go to http://localhost:3000/ to see the app.
