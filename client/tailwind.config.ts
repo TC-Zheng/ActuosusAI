@@ -1,15 +1,24 @@
-import type { Config } from "tailwindcss";
-import colors from "tailwindcss/colors";
+import colors from 'tailwindcss/colors';
 
 const config: {
   plugins: unknown[];
-  theme: { extend: { colors: {primary: unknown, secondary: unknown, background: unknown, error: unknown, accent: unknown} } };
-  content: string[]
+  theme: {
+    extend: {
+      colors: {
+        primary: unknown;
+        secondary: unknown;
+        background: unknown;
+        error: unknown;
+        accent: unknown;
+      };
+    };
+  };
+  content: string[];
 } = {
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {

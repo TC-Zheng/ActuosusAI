@@ -3,7 +3,8 @@ import ModelCard from '@/app/models/components/ModelCard';
 import Loader from '@/app/components/Loader';
 import {
   ModelDetails,
-  useDeleteModel, useGetGGUFFileNames,
+  useDeleteModel,
+  useGetGGUFFileNames,
   useGetModelDetails,
   useGetSearchHub,
   usePostCopyModel,
@@ -13,7 +14,6 @@ import React, { useEffect, useState } from 'react';
 import { success_toast, useDebounce, warning_toast } from '@/app/utils/utils';
 import DeleteDialog from '@/app/models/components/DeleteDialog';
 import SearchDownloadComboBox from '@/app/models/components/SearchDownloadComboBox';
-import { useRouter } from 'next/navigation';
 import ConnectDialog from '@/app/models/components/ConnectDialog';
 
 export default function ModelsPage() {

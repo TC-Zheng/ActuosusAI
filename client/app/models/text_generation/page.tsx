@@ -1,5 +1,12 @@
 'use client';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  Suspense,
+  useMemo,
+} from 'react';
 import WordDropdown from '@/app/models/text_generation/components/WordDropdown';
 import useTrie from '@/app/models/text_generation/hooks/useTrie';
 import { useWebsocket } from '@/app/hooks/useWebsocket';
@@ -15,6 +22,14 @@ type ModelInfo = {
   name: string;
   estimated_ram: number;
   estimated_vram: number;
+};
+
+const Page = () => {
+  return (
+    <Suspense fallback={<Loader />}>
+      <WebSocketComponent />
+    </Suspense>
+  );
 };
 
 const WebSocketComponent = () => {
@@ -39,10 +54,9 @@ const WebSocketComponent = () => {
     gguf_file_name: `${searchParams.get('gguf_file_name')}`,
   }).toString();
 
-  const { sendMessageToWebsocket, isConnected } = useWebsocket(
-    `ws://127.0.0.1:8000/ws/text_generation/?${queryString}`,
-    {
-      onMessage: (message) => {
+  const memoizedOptions = useMemo(
+    () => ({
+      onMessage: (message: MessageEvent) => {
         if (isLoadingModel.current) {
           isLoadingModel.current = false;
           setModelInfo(JSON.parse(message.data));
@@ -68,7 +82,18 @@ const WebSocketComponent = () => {
           }
         }
       },
-    }
+    }),
+    []
+  );
+
+  const memoizedUrl = useMemo(
+    () => `ws://127.0.0.1:8000/ws/text_generation/?${queryString}`,
+    [queryString]
+  );
+
+  const { sendMessageToWebsocket, isConnected } = useWebsocket(
+    memoizedUrl,
+    memoizedOptions
   );
 
   useEffect(() => {
@@ -119,7 +144,14 @@ const WebSocketComponent = () => {
       ]);
       sendMessage(newMessage, temperature, maxNewTokens);
     },
-    [displayedWordProbLists, originalPrompt, searchTrie, sendMessage]
+    [
+      displayedWordProbLists,
+      maxNewTokens,
+      originalPrompt,
+      searchTrie,
+      sendMessage,
+      temperature,
+    ]
   );
   const handleRefresh = useCallback(
     (index: number) => {
@@ -134,7 +166,7 @@ const WebSocketComponent = () => {
         1
       );
     },
-    [displayedWordProbLists, originalPrompt, sendMessage]
+    [displayedWordProbLists, originalPrompt, sendMessage, temperature]
   );
   const onSendClick = () => {
     setOriginalPrompt(inputMessage);
@@ -266,4 +298,4 @@ const WebSocketComponent = () => {
   );
 };
 
-export default WebSocketComponent;
+export default Page;
