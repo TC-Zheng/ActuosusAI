@@ -18,7 +18,6 @@ A more detailed video showing the whole app
   - [Install the project without Docker](#install-the-project-without-docker)
     - [Prerequisites](#prerequisites)
     - [Installation Steps](#installation-steps)
-    - [GPU support for GGUF models](#gpu-support-for-gguf-models)
 - [Roadmap](#roadmap)
 - [What is this project](#what-is-this-project)
 ## Features
