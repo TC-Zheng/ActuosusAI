@@ -1,8 +1,6 @@
 import Link from 'next/link';
 
-const menuItems = [
-  { label: `Models`, href: { pathname: '/models' } },
-];
+const menuItems = [{ label: `Models`, href: { pathname: '/models' } }];
 export default function RootHeader() {
   return (
     <header className="flex bg-background-300 h-16">

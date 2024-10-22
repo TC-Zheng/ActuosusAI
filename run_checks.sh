@@ -13,3 +13,8 @@ mypy .
 # Run pytest
 echo "Running pytest..."
 pytest --cov=your_package_name --cov-report=xml
+
+# Run ESLint on the frontend
+cd client || exit
+npx eslint --fix .
+

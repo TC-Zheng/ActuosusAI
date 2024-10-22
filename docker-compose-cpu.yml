@@ -1,0 +1,26 @@
+services:
+  backend_cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    volumes:
+      - .docker_volumes:/volume  # Mount the project directory
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////volume/default.db
+      - BASE_FILE_STORAGE_PATH=/volume/models
+      - DEBUG_MODE=True
+      - HUGGINGFACE_TOKEN=
+      # Add any additional environment variables needed by your app
+  frontend:
+    build:
+      context: ./client  # Ensure this is the correct path to your frontend directory
+      dockerfile: Dockerfile  # Your Dockerfile inside the /client folder
+    ports:
+      - "3000:3000"  # Exposing the frontend on port 3000 (adjust if needed)
+    environment:
+      - NODE_ENV=production  # Example environment variable for Node.js apps
+      - PORT=3000
+    depends_on:
+      - backend_cpu  # Ensure backend is up before frontend starts

@@ -16,7 +16,7 @@ class TextGenerationRequest(BaseModel):
     prompt: str
     k: int = 10
     temperature: float = 1.0
-    max_length: int = None
+    max_length: Optional[int] = None
     max_new_tokens: int = 50
     initial_spec: List[str] = []
 
@@ -39,7 +39,7 @@ async def websocket_text_generation_endpoint(
     text_generation_service: TextGenerationService = Depends(
         get_text_generation_service
     ),
-):
+) -> None:
     await websocket.accept()
     # Receive onopen info about how to load the model
     await text_generation_service.load_model(

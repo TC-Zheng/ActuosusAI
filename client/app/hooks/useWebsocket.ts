@@ -63,7 +63,7 @@ export const useWebsocket = (url: string, options?: UseWebsocketOptions) => {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [options, url]);
 
   return {
     isConnected,

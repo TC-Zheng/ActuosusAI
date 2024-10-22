@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Any, Generator
 
 import torch
 from llama_cpp import Llama, llama_get_logits
@@ -8,6 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import numpy as np
 
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
+from actuosus_ai.common.actuosus_exception import NotFoundException, ValidationException
 from actuosus_ai.common.utils import get_memory_footprint
 
 
@@ -15,22 +16,25 @@ class TextGenerationService:
 
     def __init__(self, storage_service: AIModelStorageService):
         self.storage_service = storage_service
-        self.model = None
-        self.tokenizer = None
+        self.model: Any = None
+        self.tokenizer: Any = None
         self.device = None
-        self.model_name = None
-        self.allocated_memory = None
+        self.model_name = ""
         self.gguf = False
-        self.estimated_ram = None
-        self.estimated_vram = None
+        self.estimated_ram = 0.0
+        self.estimated_vram = 0.0
 
     async def load_model(
         self, ai_model_id: int, quantization: Optional[str] = None, gguf_file_name: Optional[str] = None) -> None:
         initial_ram, initial_vram = get_memory_footprint()
         dto = await self.storage_service.get_model_by_id(ai_model_id)
+        if not dto:
+            raise NotFoundException(f"Model with id {ai_model_id} not found")
         self.model_name = dto.name
         match quantization:
             case "gguf":
+                if not gguf_file_name:
+                    raise ValidationException("gguf_file_name must be provided when loading a GGUF model")
                 self.model = Llama(model_path=os.path.join(dto.storage_path, gguf_file_name), n_gpu_layers=-1)
                 self.tokenizer = self.model.tokenizer()
                 self.gguf = True
@@ -95,11 +99,11 @@ class TextGenerationService:
     def generate_with_alt(
         self,
         original_prompt: str,
-        max_length: int = None,
+        max_length: Optional[int] = None,
         max_new_tokens: int = 50,
         k: int = 10,
         temperature: float = 1.0,
-    ) -> List[List[Tuple[str, float]]]:
+    ) -> Generator[List[Tuple[str, float]], None, None]:
         if self.gguf:
             prompt_tokens = torch.tensor([self.tokenizer.encode(original_prompt)])
         else:
