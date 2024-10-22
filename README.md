@@ -19,7 +19,6 @@ A more detailed video showing the whole app
     - [Prerequisites](#prerequisites)
     - [Installation Steps](#installation-steps)
     - [GPU support for GGUF models](#gpu-support-for-gguf-models)
-- [How to run the project](#how-to-run-the-project)
 - [Roadmap](#roadmap)
 - [What is this project](#what-is-this-project)
 ## Features
@@ -93,32 +92,25 @@ A more detailed video showing the whole app
    cd client
    npm install
 
-### GPU support for GGUF models
+(Optionl) GPU support for GGUF models
 By default, the GGUF models will only be run on cpu, to run GGUF models on GPU, you need to install the llama-cpp-python package with cuda support.
-1. Go to the project directory:
-   ```bash
-   cd ActuosusAI
-2. Open poetry shell:
+
+6. Open poetry shell and run the following command:
    ```bash
    poetry shell
-   
-3. Run the following command:
+   ```
     ```bash
     CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
-   
-### How to run the project
-1. Go to the project directory:
-   ```bash
-   cd ActuosusAI
-2. Modify the .env file:
+
+7. Modify the .env file:
    - Change the database_url and base_file_storage_path to your desired path.
    - Add a huggingface_token if you want to download certain models on huggingface that need permissions.
 
-3. Run the script:
+8. To start the app you canrRun the script:
    ```bash
    ./start_dev.sh
 
-4. Or alternatively, you can
+Or alternatively, you can
    -  go to actuosus_ai/app and run
    ```bash
    uvicorn main:app --reload
