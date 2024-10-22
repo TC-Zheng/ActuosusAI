@@ -32,22 +32,42 @@ A more detailed video showing the whole app
 ## Installation Guide
 
 ## Quick Start With Docker
-1. Install [Docker](https://www.docker.com/)
+1. Install [Docker](https://www.docker.com/):
+   - For **Windows users**: Ensure **Docker Desktop** is running, and if you want GPU support in Docker, you'll need to have **WSL2** set up with **CUDA-compatible NVIDIA drivers**.
+   - For **Linux and macOS users**: Install Docker and ensure your NVIDIA drivers are installed if you plan to use GPU support.
+
 2. Clone the repo:
    ```bash
    git clone https://github.com/TC-Zheng/ActuosusAI.git
 3. Go to the project directory:
    ```bash
     cd ActuosusAI
-4. (Optional) Add a Huggingface token in the docker-compose.yml file
-- You only need this if you want to download models that require permissions
-- Open the docker-compose.yml file
-- Search for HUGGINGFACE_TOKEN=
-- Add your huggingface token after the equal sign without any quotes 
+4. (Optional) Add a Hugging Face token in the docker-compose-gpu.yml or docker-compose-cpu.yml file:
 
-5. Run the following command:
+- Only needed if you want to download models requiring permissions.
+- Open the relevant docker-compose.yml file.
+- Search for HUGGINGFACE_TOKEN=.
+- Add your Hugging Face token after the equal sign without any quotes.
+
+5. Run the appropriate Docker Compose command based on your setup:
+
+- If you If you **do not** have an Nvidia GPU:
    ```bash
-   docker-compose up --build
+   docker-compose -f docker-compose-cpu.yml up --build
+    ```
+- If you **do** have an Nvidia GPU and CUDA drivers installed:
+    ```bash
+    docker-compose -f docker-compose-gpu.yml up --build
+
+6. Open the UI in browser:
+    - Go to http://localhost:3000/ to see the app.
+
+7. Start chatting with a model:
+    - If unsure which model you want, you can start by typing this
+    ```bash
+    openai-community/gpt2 
+    ```
+    - to the download field and download this small model and chat with it.
 ## Install the project without Docker
 ### Prerequisites
 
@@ -108,16 +128,6 @@ By default, the GGUF models will only be run on cpu, to run GGUF models on GPU, 
    ```bash
    npm run dev
    ```
-   
-4. Open the UI in browser:
-    - Go to http://localhost:3000/ to see the app.
-
-5. Quick start:
-    - You can start by typing this
-    ```bash
-    openai-community/gpt2 
-    ```
-    - to the download field and download this small model and chat with it.
 
 ## Roadmap
 - Feature 1: Add docker support and other things that would make this app easier to run for people.
