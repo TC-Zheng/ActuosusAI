@@ -10,12 +10,6 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    environment:
-      - DATABASE_URL=sqlite+aiosqlite:////local_storage/default.db
-      - BASE_FILE_STORAGE_PATH=/local_storage/models
-      - DEBUG_MODE=False
-      - HUGGINGFACE_TOKEN=
-      # Add any additional environment variables needed by your app
     command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   frontend:
