@@ -28,8 +28,15 @@ class AIModelDownloadService:
             storage_path = os.path.join(
                 self.settings.base_file_storage_path, model_name
             )
+
+            # Make sure the storage path is unique by adding a suffix
+            copy_suffix = "_copy"
+            original_storage_path = storage_path
+
             while os.path.exists(storage_path):
-                storage_path = os.path.join(storage_path, "_copy")
+                storage_path = original_storage_path + copy_suffix
+                copy_suffix += "_copy"
+
             await asyncio.get_running_loop().run_in_executor(
                 None,
                 lambda: snapshot_download(repo_id=model_name, local_dir=storage_path),

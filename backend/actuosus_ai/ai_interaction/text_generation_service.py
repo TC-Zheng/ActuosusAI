@@ -4,7 +4,14 @@ from typing import Tuple, List, Optional, Any, Generator
 import torch
 from llama_cpp import Llama, llama_get_logits
 from torch import Tensor
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
+try:
+    from transformers import BitsAndBytesConfig
+    bitsandbytes_available = True
+except ImportError:
+    BitsAndBytesConfig = None
+    bitsandbytes_available = False
+
 import numpy as np
 
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
@@ -19,7 +26,7 @@ class TextGenerationService:
         self.model: Any = None
         self.tokenizer: Any = None
         self.device = None
-        self.model_name = ""
+        self.ai_model_name = ""
         self.gguf = False
         self.estimated_ram = 0.0
         self.estimated_vram = 0.0
@@ -30,7 +37,11 @@ class TextGenerationService:
         dto = await self.storage_service.get_model_by_id(ai_model_id)
         if not dto:
             raise NotFoundException(f"Model with id {ai_model_id} not found")
-        self.model_name = dto.name
+        self.ai_model_name = dto.name
+
+        if not bitsandbytes_available and (quantization == "int8" or quantization == "int4" or quantization == "float16"):
+            quantization = "bfloat16"
+
         match quantization:
             case "gguf":
                 if not gguf_file_name:
@@ -59,11 +70,17 @@ class TextGenerationService:
                 )
                 self.tokenizer = AutoTokenizer.from_pretrained(dto.storage_path)
 
+            case "bfloat16":
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    dto.storage_path, torch_dtype=torch.bfloat16, device_map="auto"
+                )
+                self.tokenizer = AutoTokenizer.from_pretrained(dto.storage_path)
             case _:
                 self.model = AutoModelForCausalLM.from_pretrained(
                     dto.storage_path, device_map="auto"
                 )
                 self.tokenizer = AutoTokenizer.from_pretrained(dto.storage_path)
+
         if not self.gguf:
             self.device = self.model.device
         final_ram, final_vram = get_memory_footprint()

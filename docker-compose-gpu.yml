@@ -4,9 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile.gpu
     volumes:
-      - .docker_volumes:/volume  # Mount the project directory
+      - ./local_storage:/local_storage
+      - ./backend:/backend
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     deploy:
       resources:
         reservations:
@@ -14,20 +17,20 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
-    environment:
-      - DATABASE_URL=sqlite+aiosqlite:////volume/default.db
-      - BASE_FILE_STORAGE_PATH=/volume/models
-      - DEBUG_MODE=True
-      - HUGGINGFACE_TOKEN=
       # Add any additional environment variables needed by your app
+    command: [ "poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
+
   frontend:
     build:
-      context: ./client  # Ensure this is the correct path to your frontend directory
-      dockerfile: Dockerfile  # Your Dockerfile inside the /client folder
+      context: ./frontend  # Ensure this is the correct path to your frontend directory
+      dockerfile: Dockerfile  # Your Dockerfile inside the /frontend folder
+    volumes:
+      - ./frontend/app:/frontend/app
     ports:
       - "3000:3000"  # Exposing the frontend on port 3000 (adjust if needed)
     environment:
-      - NODE_ENV=production  # Example environment variable for Node.js apps
+      - NODE_ENV=development  # Example environment variable for Node.js apps
       - PORT=3000
     depends_on:
-      - backend_gpu  # Ensure backend is up before frontend starts
+      - backend_gpu
+    command: ["npm", "run", "dev"]

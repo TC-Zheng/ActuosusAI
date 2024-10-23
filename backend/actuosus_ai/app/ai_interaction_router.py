@@ -47,7 +47,7 @@ async def websocket_text_generation_endpoint(
     )
     await websocket.send_json(
         ModelConnectionSuccessResponse(
-            name=text_generation_service.model_name,
+            name=text_generation_service.ai_model_name,
             estimated_ram=text_generation_service.estimated_ram,
             estimated_vram=text_generation_service.estimated_vram,
         ).model_dump()

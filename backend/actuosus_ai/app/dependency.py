@@ -1,6 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from actuosus_ai.ai_interaction.ai_chat_service import AIChatService
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.ai_model_manager.ai_model_download_service import (
     AIModelDownloadService,
@@ -32,3 +33,10 @@ def get_text_generation_service(
     ),
 ) -> TextGenerationService:
     return TextGenerationService(ai_model_storage_service)
+
+def get_ai_conversation_service(
+    text_generation_service: TextGenerationService = Depends(
+        get_text_generation_service
+    ),
+) -> AIChatService:
+    return AIChatService(text_generation_service)

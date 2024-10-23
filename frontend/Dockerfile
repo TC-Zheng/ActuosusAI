@@ -1,7 +1,7 @@
 FROM node:20.18.0
 
 # Set working directory for frontend
-WORKDIR /client
+WORKDIR /frontend
 
 # Copy the Next.js app files
 COPY ./package*.json .
@@ -23,6 +23,3 @@ RUN npm run build
 
 # Expose the port Next.js will run on
 EXPOSE 3000
-
-# Command to run the Next.js app
-CMD ["npm", "run", "start"]
