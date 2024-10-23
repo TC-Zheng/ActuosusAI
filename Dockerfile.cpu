@@ -1,14 +1,8 @@
-FROM python:3.12.3-slim
+# Stage 1: Base image with necessary build tools for cacheing purposes
+FROM python:3.12.3-slim AS base
 
 # Set working directory for backend
-WORKDIR /actuosus_ai
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_VERSION=1.6.1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PIP_MAX_RETRIES=10
+WORKDIR /backend
 
 # Install necessary build tools for llama-cpp-python
 RUN apt-get update && apt-get install -y \
@@ -18,30 +12,37 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
+
+# Stage 2: Final image
+FROM python:3.12.3-slim
+
+# Set working directory for backend
+WORKDIR /backend
+
+# Copy necessary build tools and libraries from base stage
+COPY --from=base /usr /usr
+COPY --from=base /lib /lib
+
 # Copy the Python project files
-COPY pyproject.toml poetry.lock ./
+COPY backend/pyproject.toml backend/poetry.lock ./
 
 # Install Poetry
 RUN pip install poetry
 
-# Set the Python version for Poetry
-RUN poetry env use python3.12
-
-# Install dependencies (without dev dependencies) with retry logic globally
-RUN poetry install --no-dev --no-interaction --no-ansi || \
-    (poetry install --no-dev --no-interaction --no-ansi)
+# Install dependencies
+RUN poetry install
 
 # Copy the rest of the backend project
-COPY actuosus_ai ./
+COPY backend/ ./
 
 # Install project itself
 RUN poetry install
 
 # Set the PYTHONPATH environment variable
-ENV PYTHONPATH="${PYTHONPATH}:/"
+ENV PYTHONPATH="${PYTHONPATH}:/backend/actuosus_ai"
 
 # Expose the port FastAPI will run on
 EXPOSE 8000
 
 # Command to run the backend (FastAPI) server in the app folder
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+#

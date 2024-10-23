@@ -51,9 +51,9 @@ COPY pyproject.toml poetry.lock ./
 
 # Install dependencies (without dev dependencies) with retry logic globally
 RUN poetry config virtualenvs.create false && \
-    poetry install --no-dev --no-interaction --no-ansi || \
+    poetry install --extras "gpu" --no-dev --no-interaction --no-ansi || \
     (sleep 5 && poetry config virtualenvs.create false && \
-     poetry install --no-dev --no-interaction --no-ansi)
+     poetry install --extras "gpu" --no-dev --no-interaction --no-ansi)
 
 # Install llama-cpp-python with CUDA support
 RUN CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose

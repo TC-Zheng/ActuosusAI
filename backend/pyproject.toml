@@ -22,12 +22,10 @@ asyncpg = "^0.29.0"
 huggingface-hub = "^0.25.2"
 websockets = "^13.1"
 accelerate = "^1.0.1"
-bitsandbytes = "^0.44.1"
-nvidia-ml-py = "^12.560.30"
-gguf = "^0.10.0"
-sentencepiece = "^0.2.0"
 llama-cpp-python = "^0.3.1"
 
+[tool.poetry.extras]
+gpu = ["bitsandbytes", "nvidia-ml-py"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
