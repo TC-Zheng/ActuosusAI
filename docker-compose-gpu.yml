@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile.gpu
     volumes:
-      - /local_storage:/local_storage
-      - /backend:/actuosus_ai
+      - ./local_storage:/local_storage
+      - ./backend:/backend
     ports:
       - "8000:8000"
     env_file:
@@ -20,19 +20,22 @@ services:
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////local_storage/default.db
       - BASE_FILE_STORAGE_PATH=/local_storage/models
-      - DEBUG_MODE=True
+      - DEBUG_MODE=False
       - HUGGINGFACE_TOKEN=
       # Add any additional environment variables needed by your app
+    command: [ "poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
+
   frontend:
     build:
       context: ./frontend  # Ensure this is the correct path to your frontend directory
       dockerfile: Dockerfile  # Your Dockerfile inside the /frontend folder
     volumes:
-      - /frontend:/frontend
+      - ./frontend/app:/frontend/app
     ports:
       - "3000:3000"  # Exposing the frontend on port 3000 (adjust if needed)
     environment:
       - NODE_ENV=development  # Example environment variable for Node.js apps
       - PORT=3000
     depends_on:
-      - backend_gpu  # Ensure backend is up before frontend starts
+      - backend_gpu
+    command: ["npm", "run", "dev"]

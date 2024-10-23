@@ -4,7 +4,7 @@ FROM nvidia/cuda:12.6.2-cudnn-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Set working directory for backend
-WORKDIR /actuosus_ai
+WORKDIR /backend
 
 # Install necessary build tools for llama-cpp-python
 RUN apt-get update && apt-get install -y \
@@ -13,15 +13,6 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Python 3.12
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_HOME=/opt/poetry \
-    POETRY_VERSION=1.6.1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_DEFAULT_TIMEOUT=100 \
-    PIP_MAX_RETRIES=10
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -41,34 +32,25 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3
 
 # Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-# Add Poetry to PATH
-ENV PATH="${POETRY_HOME}/bin:${PATH}"
+RUN pip install poetry
 
 # Copy the Python project files
-COPY pyproject.toml poetry.lock ./
+COPY backend/pyproject.toml backend/poetry.lock ./
 
 # Install dependencies (without dev dependencies) with retry logic globally
-RUN poetry config virtualenvs.create false && \
-    poetry install --extras "gpu" --no-dev --no-interaction --no-ansi || \
-    (sleep 5 && poetry config virtualenvs.create false && \
-     poetry install --extras "gpu" --no-dev --no-interaction --no-ansi)
+RUN poetry install --extras "gpu"
 
 # Install llama-cpp-python with CUDA support
 RUN CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
 
 # Copy the rest of the backend project
-COPY actuosus_ai ./
+COPY backend/ ./
 
 # Install project itself
 RUN poetry install
 
 # Set the PYTHONPATH environment variable
-ENV PYTHONPATH="${PYTHONPATH}:/"
+ENV PYTHONPATH="${PYTHONPATH}:/backend/actuosus_ai"
 
 # Expose the port FastAPI will run on
 EXPOSE 8000
-
-# Command to run the backend (FastAPI) server in the app folder
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
