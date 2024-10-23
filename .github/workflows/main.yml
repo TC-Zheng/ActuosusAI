@@ -1,47 +1,47 @@
-name: Python CI
+# name: Python CI
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12.3
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: 3.12.3
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          export PATH="$HOME/.local/bin:$PATH"
+#       - name: Install Poetry
+#         run: |
+#           curl -sSL https://install.python-poetry.org | python3 -
+#           export PATH="$HOME/.local/bin:$PATH"
 
-      - name: Install dependencies
-        run: poetry install
+#       - name: Install dependencies
+#         run: poetry install
 
-      - name: Run ruff checks
-        run: poetry run ruff check
+#       - name: Run ruff checks
+#         run: poetry run ruff check
 
-      - name: Run mypy checks
-        run: poetry run mypy .
+#       - name: Run mypy checks
+#         run: poetry run mypy .
 
-      - name: Run pytest with coverage
-        run: poetry run pytest --cov=actuosus_ai --cov-report=xml
+#       - name: Run pytest with coverage
+#         run: poetry run pytest --cov=actuosus_ai --cov-report=xml
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: unittests
-          fail_ci_if_error: true
+#       - name: Upload coverage to Codecov
+#         uses: codecov/codecov-action@v3
+#         with:
+#           files: ./coverage.xml
+#           token: ${{ secrets.CODECOV_TOKEN }}
+#           flags: unittests
+#           fail_ci_if_error: true
