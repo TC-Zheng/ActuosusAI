@@ -12,9 +12,6 @@
 - [Features](#features)
 - [Installation Guide](#installation-guide)
   - [Quick Start with Docker](#quick-start-with-docker)
-  - [Manual Installation (Without Docker)](#manual-installation-without-docker)
-    - [Prerequisites](#prerequisites)
-    - [Installation Steps](#installation-steps)
 - [Development](#development)
 - [Roadmap](#roadmap)
 - [About the Project](#about-the-project)
@@ -81,7 +78,7 @@
 
 ### Manual Installation (Without Docker)
 
-Refer to the Docker Compose files for how to set up the project manually. But it's basically a standard python poetry project and next.js project with the gpu support requiring installing a few extra things.
+Refer to the Docker Compose files for how to set up the project manually. It's basically a standard python poetry and next.js project with the gpu support requiring installing a few extra things.
 
 ## Development
 
