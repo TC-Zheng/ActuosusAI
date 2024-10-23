@@ -1,136 +1,102 @@
-# Project Name
+# ActuosusAI
 
+![Demo](https://github.com/user-attachments/assets/fcdffccc-391d-4aa5-9aeb-044f184d33db)
 
-![Recording2024-10-20122344-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/fcdffccc-391d-4aa5-9aeb-044f184d33db)
+*A quick demo showcasing the main feature of the project.*
 
+![Full Video](https://github.com/user-attachments/assets/6eab937c-9d02-4f4a-9e7d-cd33ceebff58)
 
-*A quick demo video showcasing the main feature of the project.*
+*A detailed walkthrough of the entire app.*
 
-
-
-![video](https://github.com/user-attachments/assets/6eab937c-9d02-4f4a-9e7d-cd33ceebff58)
-A more detailed video showing the whole app
-
-## Index
+## Table of Contents
 - [Features](#features)
 - [Installation Guide](#installation-guide)
-  - [Quick Start With Docker](#quick-start-with-docker)
-  - [Install the project without Docker](#install-the-project-without-docker)
+  - [Quick Start with Docker](#quick-start-with-docker)
+  - [Manual Installation (Without Docker)](#manual-installation-without-docker)
     - [Prerequisites](#prerequisites)
     - [Installation Steps](#installation-steps)
+- [Development](#development)
 - [Roadmap](#roadmap)
-- [What is this project](#what-is-this-project)
-## Features
+- [About the Project](#about-the-project)
 
-- Feature 1: Download and manage models from hugging face
-- Feature 2: Load the models in up to 4 bit quantization
-- Feature 3: Support GGUF model format
-- Feature 4: Chat with the model with alternative tokens
+## Features
+- **Download and manage models** from Hugging Face.
+- **Support for GGUF models** and load models in up to **4-bit quantization**.
+- **Chat interface** that supports alternative tokens.
+- Model interaction is simple and efficient.
 
 ## Installation Guide
 
-## Quick Start With Docker
-1. Install [Docker](https://www.docker.com/):
-   - For **Windows users**: Ensure **Docker Desktop** is running, and if you want GPU support in Docker, you'll need to have **WSL2** set up with **CUDA-compatible NVIDIA drivers**.
-   - For **Linux and macOS users**: Install Docker and ensure your NVIDIA drivers are installed if you plan to use GPU support.
+### Quick Start with Docker
 
-2. Clone the repo:
+1. **Install [Docker](https://www.docker.com/)**:
+   - **Windows**: Ensure Docker Desktop is running. For GPU support, set up **WSL2** and **CUDA-compatible NVIDIA drivers**.
+   - **Linux/macOS**: Install Docker and ensure NVIDIA drivers are present if you want GPU support.
+
+2. **Clone the repository**:
    ```bash
    git clone https://github.com/TC-Zheng/ActuosusAI.git
-3. Go to the project directory:
-   ```bash
-    cd ActuosusAI
-4. (Optional) Add a Hugging Face token in the docker-compose-gpu.yml or docker-compose-cpu.yml file:
+   ```
 
-- Only needed if you want to download models requiring permissions.
-- Open the relevant docker-compose.yml file.
-- Search for HUGGINGFACE_TOKEN=.
-- Add your Hugging Face token after the equal sign without any quotes.
-
-5. Run the appropriate Docker Compose command based on your setup:
-
-- If you If you **do not** have an Nvidia GPU:
-   ```bash
-   docker-compose -f docker-compose-cpu.yml up --build
-    ```
-- If you **do** have an Nvidia GPU and CUDA drivers installed:
-    ```bash
-    docker-compose -f docker-compose-gpu.yml up --build
-
-6. Open the UI in browser:
-    - Go to http://localhost:3000/ to see the app.
-
-7. Start chatting with a model:
-    - If unsure which model you want, you can start by typing this
-    ```bash
-    openai-community/gpt2 
-    ```
-    - to the download field and download this small model and chat with it.
-## Install the project without Docker
-### Prerequisites
-
-- Install [Node.js](https://nodejs.org/) (v20.18.0 or higher)
-- Install [npm](https://www.npmjs.com/) (v10.8.2 or higher)
-- Install [Python](https://www.python.org/) (v3.12.3 or higher)
-
-### Installation Steps
-
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/TC-Zheng/ActuosusAI.git
-   
-2. Go to the project directory:
+3. **Navigate to the project directory**:
    ```bash
    cd ActuosusAI
-3. Install python dependencies via poetry:
-   ```bash
-   poetry install
-   
-4. Go the frontend directory and install frontend dependencies:
-   ```bash
-   cd client
-   npm install
-
-(Optionl) GPU support for GGUF models
-By default, the GGUF models will only be run on cpu, to run GGUF models on GPU, you need to install the llama-cpp-python package with cuda support.
-
-6. Open poetry shell and run the following command:
-   ```bash
-   poetry shell
-   ```
-    ```bash
-    CMAKE_ARGS="-DGGML_CUDA=on" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
-
-7. Modify the .env file:
-   - Change the database_url and base_file_storage_path to your desired path.
-   - Add a huggingface_token if you want to download certain models on huggingface that need permissions.
-
-8. To start the app you canrRun the script:
-   ```bash
-   ./start_dev.sh
-
-Or alternatively, you can
-   -  go to actuosus_ai/app and run
-   ```bash
-   uvicorn main:app --reload
    ```
 
-   - go to client and run
-   ```bash
-   npm run dev
-   ```
+4. **(Optional) Add a Hugging Face token**:
+   - Create a `.env` file if it doesn't exist, and add your token if downloading models that require authentication.
+   - Add this line to the `.env`:
+     ```bash
+     huggingface_token="your_token_here"
+     ```
+
+5. **Run the appropriate Docker Compose command**:
+   - Without an Nvidia GPU:
+     ```bash
+     docker-compose -f docker-compose-cpu.yml up --build
+     ```
+   - With Nvidia GPU (and CUDA drivers):
+     ```bash
+     docker-compose -f docker-compose-gpu.yml up --build
+     ```
+
+6. **Access the app in your browser**:
+   - Open [http://localhost:3000](http://localhost:3000) to interact with the app.
+
+7. **Start chatting with a model**:
+   - For example, try downloading and chatting with the `gpt2` model:
+     ```bash
+     openai-community/gpt2
+     ```
+
+8. **Subsequent runs**:
+   - To start the app without rebuilding:
+     ```bash
+     docker-compose -f docker-compose-cpu.yml up
+     ```
+     or
+     ```bash
+     docker-compose -f docker-compose-gpu.yml up
+     ```
+
+### Manual Installation (Without Docker)
+
+Refer to the Docker Compose files for how to set up the project manually. But it's basically a standard python poetry project and next.js project with the gpu support requiring installing a few extra things.
+
+## Development
+
+The Docker setup automatically mounts the project folder into the container. Any changes made to the local project will be reflected in the container. This allows for seamless development without needing to install dependencies locally. Simply run the container and develop within the environment.
 
 ## Roadmap
-- Feature 1: Add docker support and other things that would make this app easier to run for people.
-- Feature 2: Let user able to add existing local models to use with the app.
-- Feature 3: Add chatting with instruction tuned models.
-- Please let me know if there are other features people like to see
+- [x] Add Docker support and streamline the app's usability.
+- [ ] Allow users to add existing local models to the app.
+- [ ] Enable chatting with instruction-tuned models.
+- [ ] I'm open to feature requests—feel free to suggest improvements!
+## About the Project
 
-## What is this project
-This is a personal hobby project I have with the purpose of learning and experimenting with ML models and my web development skill.
-I will be continuously adding new features and improving the existing ones. Here are some ideas of what I want to experiement on with this project:
-- Dataset management
-- Training/Finetuning management with history and logs.
-- Memory option from either rag or finetuning
-- More type of models support like vision/multi-modal, and potentially interacting with multiple models at once.
-- And more
+This is a personal hobby project aimed at experimenting with machine learning models and honing web development skills. I'm continuously adding new features and enhancing existing ones. Some ideas I'm planning to explore include:
+- **Dataset management** for seamless model training.
+- **Training/finetuning management** with detailed history and logs.
+- Adding **memory options** such as RAG (retrieval-augmented generation) or finetuning.
+- Expanding **model support** to include vision/multi-modal models and interactions with multiple models simultaneously.
+- And much more!

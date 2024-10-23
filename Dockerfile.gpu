@@ -38,7 +38,7 @@ RUN pip install poetry
 COPY backend/pyproject.toml backend/poetry.lock ./
 
 # Install dependencies (without dev dependencies) with retry logic globally
-RUN poetry install --extras "gpu"
+RUN poetry install -E gpu
 
 # Install llama-cpp-python with CUDA support
 RUN CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
@@ -47,7 +47,7 @@ RUN CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" pip install llama-cp
 COPY backend/ ./
 
 # Install project itself
-RUN poetry install
+RUN poetry install -E gpu
 
 # Set the PYTHONPATH environment variable
 ENV PYTHONPATH="${PYTHONPATH}:/backend/actuosus_ai"
