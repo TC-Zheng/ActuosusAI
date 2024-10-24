@@ -17,8 +17,10 @@ class Settings(BaseSettings):
 
 load_dotenv(override=True)
 settings = Settings()  # type: ignore
-if settings.huggingface_token and settings.huggingface_token.strip():
+try:
     login(settings.huggingface_token)
+except ValueError:
+    pass
 
 
 def get_settings() -> Settings:

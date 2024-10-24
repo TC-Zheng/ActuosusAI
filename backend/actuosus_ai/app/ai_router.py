@@ -135,12 +135,12 @@ async def get_models(
 
 
 class SearchHuggingFaceResponse(BaseModel):
-    model_names: List[str]
+    ai_model_names: List[str]
 
 
-@router.get("/huggingface/search/{model_name:path}/")
+@router.get("/huggingface/search/{ai_model_name:path}/")
 async def search_hugging_face(
-    model_name: str,
+    ai_model_name: str,
     download_ai_model_service: AIModelDownloadService = Depends(
         get_ai_download_service
     ),
@@ -148,11 +148,16 @@ async def search_hugging_face(
     """
     Search Hugging Face models
     """
-    model_names = await download_ai_model_service.search_hub_with_name(model_name, 10)
-    return SearchHuggingFaceResponse(model_names=model_names)
+    ai_model_names = await download_ai_model_service.search_hub_with_name(
+        ai_model_name, 10
+    )
+    return SearchHuggingFaceResponse(ai_model_names=ai_model_names)
+
 
 class GGUFFileNamesResponse(BaseModel):
     gguf_file_names: List[str]
+
+
 @router.get("/gguf/files/{ai_model_id}/")
 async def get_gguf_file_names(
     ai_model_id: int,
@@ -163,4 +168,6 @@ async def get_gguf_file_names(
     """
     Get gguf file names for a model based on it's id
     """
-    return GGUFFileNamesResponse(gguf_file_names=await ai_model_storage_service.get_all_gguf_files(ai_model_id))
+    return GGUFFileNamesResponse(
+        gguf_file_names=await ai_model_storage_service.get_all_gguf_files(ai_model_id)
+    )

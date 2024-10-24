@@ -176,9 +176,7 @@ class TestAIModelStorageService:
 
         # Act
         with pytest.raises(InternalException):
-            await service.add_new_model(
-                example_create_model_dto
-            )
+            await service.add_new_model(example_create_model_dto)
 
         # Assert
         mocked_async_session.rollback.assert_called_once()

@@ -25,6 +25,7 @@ accelerate = "^1.0.1"
 llama-cpp-python = "^0.3.1"
 bitsandbytes = {version = "^0.44.1", optional = true}
 nvidia-ml-py = {version = "^12.560.30", optional = true}
+jinja2 = "^3.1.4"
 
 [tool.poetry.extras]
 gpu = ["bitsandbytes", "nvidia-ml-py"]

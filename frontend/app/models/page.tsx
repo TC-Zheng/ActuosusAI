@@ -108,7 +108,7 @@ export default function ModelsPage() {
       <SearchDownloadComboBox
         selectedSearchName={selectedSearchName}
         setSelectedSearchName={setSelectedSearchName}
-        model_names={searchResponse?.model_names ?? []}
+        ai_model_names={searchResponse?.ai_model_names ?? []}
         onInputChange={handleInputChange}
         onDownloadModelClick={() => {
           void postDownloadModel({ hf_model_id: selectedSearchName });

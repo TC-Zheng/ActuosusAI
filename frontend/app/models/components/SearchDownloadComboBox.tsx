@@ -12,7 +12,7 @@ import React from 'react';
 export type SearchDownloadComboBoxProps = {
   selectedSearchName: string;
   setSelectedSearchName: (value: string) => void;
-  model_names: Array<string>;
+  ai_model_names: Array<string>;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDownloadModelClick: (e: React.FormEvent) => void;
   downloadModelLoading: boolean;
@@ -20,7 +20,7 @@ export type SearchDownloadComboBoxProps = {
 export default function SearchDownloadComboBox({
   selectedSearchName,
   setSelectedSearchName,
-  model_names,
+  ai_model_names,
   onInputChange,
   onDownloadModelClick,
   downloadModelLoading,
@@ -65,7 +65,7 @@ export default function SearchDownloadComboBox({
             'bg-opacity-50 backdrop-blur-md'
           )}
         >
-          {model_names.map((name) => (
+          {ai_model_names.map((name) => (
             <ComboboxOption
               key={name}
               value={name}

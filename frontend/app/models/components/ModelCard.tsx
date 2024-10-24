@@ -47,14 +47,12 @@ export default function ModelCard({
       <p className="text-primary-400 text-center mb-1">
         {modelDetails.pipeline_tag}
       </p>
-      {modelDetails.pipeline_tag === 'text-generation' && (
         <button
           className="text-center mb-5 mt-auto font-bold text-secondary-900"
           onClick={() => onConnectClick(modelDetails)}
         >
           Connect
         </button>
-      )}
     </p>
   );
 }

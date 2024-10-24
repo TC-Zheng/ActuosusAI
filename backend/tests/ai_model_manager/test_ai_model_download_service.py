@@ -20,7 +20,7 @@ class TestAIModelDownloadService:
 
     @pytest.mark.asyncio
     @patch.object(HfApi, "model_info")
-    @patch('actuosus_ai.ai_model_manager.ai_model_download_service.snapshot_download')
+    @patch("actuosus_ai.ai_model_manager.ai_model_download_service.snapshot_download")
     async def test_download_hugging_face_lm_success(
         self,
         mocked_snapshot_download,
@@ -35,7 +35,9 @@ class TestAIModelDownloadService:
             pipeline_tag="some pipeline value"
         )
         mocked_ai_model_storage_service.add_new_model.return_value = None
-        service = AIModelDownloadService(mocked_ai_model_storage_service, mocked_settings)
+        service = AIModelDownloadService(
+            mocked_ai_model_storage_service, mocked_settings
+        )
 
         # Act
         await service.download_lm_from_hugging_face(model_name)
