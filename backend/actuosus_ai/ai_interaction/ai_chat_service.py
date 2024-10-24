@@ -1,7 +1,7 @@
-from typing import Optional, Generator, List, Tuple, Dict
+from typing import Optional, Generator, List, Tuple, Dict, Any
 
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
-from actuosus_ai.common.utils import parse_messages, remove_trailing_eot_token
+from actuosus_ai.common.utils import parse_jinja2_messages, remove_trailing_eot_token
 
 
 class AIChatService:
@@ -9,8 +9,7 @@ class AIChatService:
         self.text_generation_service = text_generation_service
 
     # Delegate attribute access to text generation service
-    def __getattr__(self, name):
-        # This will forward access to the fields of `a_instance` (i.e., id, name)
+    def __getattr__(self, name: str) -> Any:
         return getattr(self.text_generation_service, name)
 
     async def load_model(
@@ -23,10 +22,14 @@ class AIChatService:
             ai_model_id, quantization, gguf_file_name
         )
 
-    def _format_chat(self, messages):
+    def _format_chat(self, messages: List[Dict[str, str]]) -> str:
         if self.tokenizer.chat_template is not None:
             # Use the custom chat template
-            return remove_trailing_eot_token(self.tokenizer.apply_chat_template(messages, tokenize=False, continue_final_message=True))
+            return remove_trailing_eot_token(
+                self.tokenizer.apply_chat_template(
+                    messages, tokenize=False, continue_final_message=True
+                )
+            )
         else:
             # Use a default ChatML template
             formatted_messages = []
@@ -47,9 +50,9 @@ class AIChatService:
     ) -> Generator[List[Tuple[str, float]], None, None]:
         if self.gguf:
             # Check if the model has a jinja2 chat template
-            if 'tokenizer.chat_template' in self.model.metadata:
-                template = self.model.metadata['tokenizer.chat_template']
-                prompt = parse_messages(template, messages)
+            if "tokenizer.chat_template" in self.model.metadata:
+                template = self.model.metadata["tokenizer.chat_template"]
+                prompt = parse_jinja2_messages(template, messages)
             else:
                 prompt = self._format_chat(messages)
             yield from self.text_generation_service.generate_tokens_with_probabilities_gguf(

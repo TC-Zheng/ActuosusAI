@@ -148,7 +148,9 @@ async def search_hugging_face(
     """
     Search Hugging Face models
     """
-    ai_model_names = await download_ai_model_service.search_hub_with_name(ai_model_name, 10)
+    ai_model_names = await download_ai_model_service.search_hub_with_name(
+        ai_model_name, 10
+    )
     return SearchHuggingFaceResponse(ai_model_names=ai_model_names)
 
 

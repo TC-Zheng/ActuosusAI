@@ -7,7 +7,8 @@ from pydantic import BaseModel
 from actuosus_ai.ai_interaction.ai_chat_service import AIChatService
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.app.dependency import (
-    get_text_generation_service, get_ai_chat_service,
+    get_text_generation_service,
+    get_ai_chat_service,
 )
 
 router = APIRouter()
@@ -80,6 +81,7 @@ async def websocket_text_generation_endpoint(
             torch.cuda.empty_cache()
         print(f"Client disconnected for item: {ai_model_id}")
 
+
 class AIChatRequest(BaseModel):
     messages: List[Dict[str, str]]
     k: int = 10
@@ -87,17 +89,16 @@ class AIChatRequest(BaseModel):
     max_length: Optional[int] = None
     max_new_tokens: int = 10000
 
+
 @router.websocket("/ws/chat/")
 async def websocket_chat_endpoint(
     websocket: WebSocket,
     ai_model_id: int,
     quantization: Optional[str] = "float16",
     gguf_file_name: Optional[str] = None,
-    ai_chat_service: AIChatService = Depends(
-        get_ai_chat_service
-    ),
+    ai_chat_service: AIChatService = Depends(get_ai_chat_service),
 ) -> None:
-    """Always add an empty "role": "assistant" at the end of the messages list if the last message is from the user"""
+    """Always add an empty {"role": "assistant", "content": ""} at the end of the messages list if the last message is from the user"""
     await websocket.accept()
     # Receive onopen info about how to load the model
     await ai_chat_service.load_model(

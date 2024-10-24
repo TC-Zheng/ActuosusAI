@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, List, Optional, Any, Generator, Callable, Dict
+from typing import Tuple, List, Optional, Any, Generator, Dict
 
 import torch
 from llama_cpp import Llama, llama_get_logits
@@ -45,10 +45,10 @@ class TextGenerationService:
         self.ai_model_name = dto.name
 
         # Without gpu, pytorch only supports bfloat16
-        if not bitsandbytes_available and (
-            quantization == "int8"
-            or quantization == "int4"
-            or quantization == "float16"
+        if not torch.cuda.is_available() and quantization in (
+            "int8",
+            "int4",
+            "float16",
         ):
             quantization = "bfloat16"
 
@@ -175,7 +175,7 @@ class TextGenerationService:
         self,
         prompt: str,
         max_length: Optional[int],
-        max_new_tokens: Optional[int],
+        max_new_tokens: int,
         k: int,
         temperature: float,
         min_prob: float,
@@ -210,7 +210,7 @@ class TextGenerationService:
         self,
         prompt: str,
         max_length: Optional[int] = None,
-        max_new_tokens: Optional[int] = 50,
+        max_new_tokens: int = 50,
         k: int = 10,
         temperature: float = 1.0,
         min_prob: float = 0.001,

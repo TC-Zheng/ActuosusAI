@@ -1,3 +1,5 @@
+from typing import List, Dict
+
 import psutil
 from jinja2 import Environment, BaseLoader, TemplateSyntaxError
 
@@ -43,7 +45,20 @@ def get_memory_footprint() -> tuple[float, float]:
     return used_ram_gb, total_vram_used_gb
 
 
-eot_tokens = ["<|im_end|>:", "</s>", "<|eot_id|>", "<|END_OF_TURN_TOKEN|>", "[/INST]", "[/TURN]", "<|endoftext|>", "[EOS]", "[EOT]", "<eos>"]
+eot_tokens = [
+    "<|im_end|>:",
+    "</s>",
+    "<|eot_id|>",
+    "<|END_OF_TURN_TOKEN|>",
+    "[/INST]",
+    "[/TURN]",
+    "<|endoftext|>",
+    "[EOS]",
+    "[EOT]",
+    "<eos>",
+]
+
+
 def remove_trailing_eot_token(text: str) -> str:
     # Strip any trailing whitespace
     stripped_text = text.rstrip()
@@ -57,11 +72,13 @@ def remove_trailing_eot_token(text: str) -> str:
     # If no eot token is found, return the original text (with trailing whitespace removed)
     return stripped_text
 
+
 env = Environment(loader=BaseLoader())
 
-def parse_messages(jinja2_template, messages):
+
+def parse_jinja2_messages(jinja2_template: str, messages: List[Dict[str, str]]) -> str:
     try:
         template = env.from_string(jinja2_template)
-        return remove_trailing_eot_token(template.render({'messages': messages}))
+        return remove_trailing_eot_token(template.render({"messages": messages}))
     except TemplateSyntaxError as e:
         return f"Template error: {str(e)}"
