@@ -20,7 +20,6 @@ class TextGenerationRequest(BaseModel):
     temperature: float = 1.0
     max_length: Optional[int] = None
     max_new_tokens: int = 50
-    initial_spec: List[str] = []
 
 
 class TextGenerationResponseWithAlt(BaseModel):
