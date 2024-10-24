@@ -136,7 +136,9 @@ export const useGetSearchHub = () => {
   const { fetchData, response, loading, error } =
     useFetch<SearchModelResponse>();
   const getSearchHub = async (ai_model_name: string) => {
-    void fetchData(`http://127.0.0.1:8000/huggingface/search/${ai_model_name}/`);
+    void fetchData(
+      `http://127.0.0.1:8000/huggingface/search/${ai_model_name}/`
+    );
   };
   return {
     getSearchHub,
