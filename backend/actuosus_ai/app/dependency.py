@@ -34,7 +34,8 @@ def get_text_generation_service(
 ) -> TextGenerationService:
     return TextGenerationService(ai_model_storage_service)
 
-def get_ai_conversation_service(
+
+def get_ai_chat_service(
     text_generation_service: TextGenerationService = Depends(
         get_text_generation_service
     ),

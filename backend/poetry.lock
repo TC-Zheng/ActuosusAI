@@ -2396,4 +2396,4 @@ gpu = ["bitsandbytes", "nvidia-ml-py"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "9bf5da8fd28e483dcd6ba7cd02325a39565f68e6d5a926ef615623b441dda5d0"
+content-hash = "cc10de7d898ec33bd99cb9d2a287269929a5f857c10ba2768ab12a9674c107e9"

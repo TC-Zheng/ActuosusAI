@@ -24,7 +24,7 @@ class AIModelDownloadService:
     async def download_lm_from_hugging_face(self, model_name: str) -> None:
         try:
             api = HfApi()
-            pipeline_tag = api.model_info(model_name).pipeline_tag
+            pipeline_tag = api.model_info(model_name).pipeline_tag or "Unknown"
             storage_path = os.path.join(
                 self.settings.base_file_storage_path, model_name
             )
@@ -69,11 +69,11 @@ class AIModelDownloadService:
                 raise InternalException(msg)
 
     @staticmethod
-    async def search_hub_with_name(model_name: str, limit: int) -> List[str]:
+    async def search_hub_with_name(ai_model_name: str, limit: int) -> List[str]:
         try:
             api = HfApi()
             return [
-                model.id for model in api.list_models(search=model_name, limit=limit)
+                model.id for model in api.list_models(search=ai_model_name, limit=limit)
             ]
         except Exception as e:
             raise InternalException(str(e))
