@@ -7,6 +7,10 @@ from actuosus_ai.common.utils import parse_jinja2_messages, remove_trailing_eot_
 class AIChatService:
     def __init__(self, text_generation_service: TextGenerationService):
         self.text_generation_service = text_generation_service
+        self.user_role = "user"
+        self.ai_role = "assistant"
+        self.messages = []
+        self.system_prompt = "You are a helpful assistant"
 
     # Delegate attribute access to text generation service
     def __getattr__(self, name: str) -> Any:

@@ -76,7 +76,7 @@ const WebSocketComponent = () => {
   );
 
   const memoizedUrl = useMemo(
-    () => `ws://127.0.0.1:8000/ws/text_generation/?${queryString}`,
+    () => `ws://127.0.0.1:8000/ws/chat/?${queryString}`,
     [queryString]
   );
 
@@ -97,6 +97,7 @@ const WebSocketComponent = () => {
     (message: string, temperature: number, maxNewTokens: number) => {
       console.log('Sending message:', message);
       const messageWithPayload = JSON.stringify({
+        index: index
         prompt: message,
         temperature: temperature,
         max_new_tokens: maxNewTokens,
