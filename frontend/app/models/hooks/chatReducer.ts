@@ -15,19 +15,11 @@ export enum WordStatus {
   PREVIOUS = -1,
   PICKED = -2,
 }
-type AIMessage = {
-  content: (WordProbList | string)[];
-  source: MessageSource.AI;
-};
-type UserMessage = {
-  content: string;
-  source: MessageSource.USER;
-};
-export type Message = AIMessage | UserMessage;
 
-function isAIMessage(message: Message): message is AIMessage {
-  return message.source === MessageSource.AI;
-}
+export type Message = {
+  content: (WordProbList | string)[];
+  source: string;
+};
 
 export type baseChatState = {
   messages: Message[];
