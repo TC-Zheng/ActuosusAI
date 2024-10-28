@@ -1,17 +1,19 @@
 // Trie node structure
-class TrieNode {
-  children: { [key: string]: TrieNode } = {};
+class MessageTrieNode {
+  children: { [key: string]: MessageTrieNode } = {};
   wordList: Array<[string, number]> = [];
-  constructor(wordList: Array<[string, number]> = []) {
+  source: string = '';
+  constructor(source: string = '', wordList: Array<[string, number]> = []) {
     this.wordList = wordList;
+    this.source = source;
   }
 }
 
-class WordListsTrie {
-  root: TrieNode;
+class MessageTrie {
+  root: MessageTrieNode;
 
   constructor() {
-    this.root = new TrieNode();
+    this.root = new MessageTrieNode();
   }
 
   insert(
@@ -22,7 +24,7 @@ class WordListsTrie {
     for (const wordList of wordLists) {
       const repr = wordList[0][0];
       if (!current.children[repr]) {
-        current.children[repr] = new TrieNode(wordList);
+        current.children[repr] = new MessageTrieNode('', wordList);
         results.push(wordList);
       } else {
         results.push(current.children[repr].wordList);
@@ -56,15 +58,15 @@ class WordListsTrie {
   }
 
   clear() {
-    this.root = new TrieNode();
+    this.root = new MessageTrieNode();
   }
 }
 
 // Custom hook to manage the Trie in state
 import { useState, useCallback } from 'react';
 
-function useTrie() {
-  const [trie] = useState(() => new WordListsTrie());
+function useMessageTrie() {
+  const [trie] = useState(() => new MessageTrie());
 
   const insertTrie = useCallback(
     (wordLists: Array<Array<[string, number]>>) => {
@@ -91,4 +93,4 @@ function useTrie() {
   };
 }
 
-export default useTrie;
+export default useMessageTrie;

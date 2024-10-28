@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useCallback, Suspense, useMemo } from 'react';
 import WordDropdown from '@/app/models/text_generation/components/WordDropdown';
-import useTrie from '@/app/models/text_generation/hooks/useTrie';
+import useMessageTrie from '@/app/models/text_generation/hooks/useMessageTrie';
 import { useWebsocket } from '@/app/hooks/useWebsocket';
 import Loader from '@/app/components/Loader';
 import { useSearchParams } from 'next/navigation';
@@ -26,7 +26,7 @@ const WebSocketComponent = () => {
   const refreshingAt = useRef<number | null>(null);
   // This really should have been a state, but I need to use it in the onmessage closure
   const isLoadingModel = useRef<boolean>(true);
-  const { insertTrie, searchTrie, clearTrie } = useTrie();
+  const { insertTrie, searchTrie, clearTrie } = useMessageTrie();
   const [state, dispatch] = useChatReducer();
   const searchParams = useSearchParams();
   const queryString = new URLSearchParams({
