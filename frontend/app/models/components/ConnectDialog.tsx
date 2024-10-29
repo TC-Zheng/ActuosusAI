@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import Link from 'next/link';
 import { ModelDetails } from '@/app/models/hooks/customHooks';
+import { ChatType } from '@/app/models/chat/page';
 
 type ConnectDialogProps = {
   open: boolean;
@@ -75,8 +76,9 @@ export default function ConnectDialog({
               <Link
                 className="text-center font-bold"
                 href={{
-                  pathname: '/models/text_generation',
+                  pathname: '/models/chat',
                   query: {
+                    chat_type: ChatType.TEXT_GENERATION,
                     ai_model_id: String(selectedModel?.ai_model_id),
                     quantization:
                       ggufFileNames.length > 0 ? 'gguf' : selectedQuantization,

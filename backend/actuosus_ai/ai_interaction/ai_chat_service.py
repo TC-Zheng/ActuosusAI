@@ -1,16 +1,17 @@
-from typing import Optional, Generator, List, Tuple, Dict, Any
+from typing import Optional, Generator, List, Tuple, Dict, Any, TypedDict
 
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.common.utils import parse_jinja2_messages, remove_trailing_eot_token
 
 
+class ChatMessage(TypedDict):
+    role: str
+    content: str
+
+
 class AIChatService:
     def __init__(self, text_generation_service: TextGenerationService):
         self.text_generation_service = text_generation_service
-        self.user_role = "user"
-        self.ai_role = "assistant"
-        self.messages = []
-        self.system_prompt = "You are a helpful assistant"
 
     # Delegate attribute access to text generation service
     def __getattr__(self, name: str) -> Any:
@@ -26,7 +27,7 @@ class AIChatService:
             ai_model_id, quantization, gguf_file_name
         )
 
-    def _format_chat(self, messages: List[Dict[str, str]]) -> str:
+    def _format_chat(self, messages: List[ChatMessage]) -> str:
         if self.tokenizer.chat_template is not None:
             # Use the custom chat template
             return remove_trailing_eot_token(
@@ -45,7 +46,7 @@ class AIChatService:
 
     def generate_chat_tokens_with_probabilities(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[ChatMessage],
         max_length: Optional[int] = None,
         max_new_tokens: int = 10000,
         k: int = 10,

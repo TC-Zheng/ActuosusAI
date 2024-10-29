@@ -2,6 +2,9 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from actuosus_ai.ai_interaction.ai_chat_service import AIChatService
+from actuosus_ai.ai_interaction.chat_websocket_orchestrator import (
+    ChatWebSocketOrchestrator,
+)
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.ai_model_manager.ai_model_download_service import (
     AIModelDownloadService,
@@ -41,3 +44,9 @@ def get_ai_chat_service(
     ),
 ) -> AIChatService:
     return AIChatService(text_generation_service)
+
+
+def get_chat_websocket_orchestrator(
+    ai_chat_service: AIChatService = Depends(get_ai_chat_service),
+) -> ChatWebSocketOrchestrator:
+    return ChatWebSocketOrchestrator(ai_chat_service)

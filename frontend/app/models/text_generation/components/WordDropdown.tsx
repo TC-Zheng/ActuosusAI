@@ -1,18 +1,16 @@
 interface WordDropdownProps {
   wordList: [string, number][];
-  index: number;
-  onWordClick: (index: number) => void;
-  onWordPick: (index: number, word: string) => void;
-  handleRefresh: (index: number) => void;
+  onWordClick: () => void;
+  onWordPick: (word: string) => void;
+  onRefreshClick: () => void;
   isOpen: boolean;
 }
 
 export default function WordDropdown({
   wordList,
-  index,
   onWordClick,
   onWordPick,
-  handleRefresh,
+  onRefreshClick,
   isOpen,
 }: WordDropdownProps) {
   const formatWordText = (word: [string, number]): string => {
@@ -36,18 +34,9 @@ export default function WordDropdown({
 
   return (
     <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-opacity-0 -z-10"
-          onClick={() => {
-            onWordClick(-1);
-          }}
-        ></div>
-      )}
-
       <div className="inline whitespace-pre-wrap relative">
         <button
-          onClick={() => onWordClick(index)}
+          onClick={() => onWordClick()}
           className={
             'hover:text-primary-400 ' +
             (isOpen
@@ -64,7 +53,7 @@ export default function WordDropdown({
             {!containPreviousSelected && (
               <button
                 className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
-                onClick={() => handleRefresh(index)}
+                onClick={() => onRefreshClick()}
               >
                 Refresh
               </button>
@@ -73,7 +62,7 @@ export default function WordDropdown({
               <button
                 key={word[0]}
                 className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
-                onClick={() => onWordPick(index, word[0])}
+                onClick={() => onWordPick(word[0])}
               >
                 {formatWordText(word)}
               </button>

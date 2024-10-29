@@ -1,11 +1,14 @@
 'use client';
-import { useEffect, useRef, useCallback, Suspense, useMemo } from 'react';
+import React, { useCallback, Suspense, useMemo, Dispatch } from 'react';
 import WordDropdown from '@/app/models/text_generation/components/WordDropdown';
-import useMessageTrie from '@/app/models/text_generation/hooks/useMessageTrie';
 import { useWebsocket } from '@/app/hooks/useWebsocket';
 import Loader from '@/app/components/Loader';
 import { useSearchParams } from 'next/navigation';
-import useChatReducer from '@/app/models/hooks/chatReducer';
+import useChatReducer, {
+  baseChatAction,
+  baseChatState,
+  Message,
+} from '@/app/models/hooks/chatReducer';
 import ChatSidePanel from '@/app/models/components/ChatSidePanel';
 
 type WordProbList = Array<[string, number]>;
@@ -13,6 +16,54 @@ type TextGenerationResponse = {
   response: WordProbList;
   end: boolean;
 };
+export enum ChatType {
+  TEXT_GENERATION = 'text_generation',
+  CHAT = 'chat',
+}
+
+enum operationType {
+  GENERATE_TEXT = 0,
+}
+
+type NewMessageRequest = {
+  type_id: 0;
+  content: string;
+  source: string;
+  i: number;
+  j: number;
+};
+
+type SelectWordRequest = {
+  type_id: 1;
+  i: number;
+  j: number;
+  new_word: string;
+};
+
+type ChangeConfigRequest = {
+  type_id: 2;
+  config_name: string;
+  config_value: string;
+};
+
+type RefreshWordRequest = {
+  type_id: 3;
+  i: number;
+  j: number;
+};
+
+type ChatRequest =
+  | NewMessageRequest
+  | SelectWordRequest
+  | ChangeConfigRequest
+  | RefreshWordRequest;
+
+enum responseTypeId {
+  MODEL_INFO = 0,
+  NEW_MESSAGE = 1,
+  NEW_MESSAGE_END = 2,
+  REFRESH_WORD = 3,
+}
 
 const Page = () => {
   return (
@@ -23,52 +74,66 @@ const Page = () => {
 };
 
 const WebSocketComponent = () => {
-  const refreshingAt = useRef<number | null>(null);
-  // This really should have been a state, but I need to use it in the onmessage closure
-  const isLoadingModel = useRef<boolean>(true);
-  const { insertTrie, searchTrie, clearTrie } = useMessageTrie();
   const [state, dispatch] = useChatReducer();
   const searchParams = useSearchParams();
   const queryString = new URLSearchParams({
+    chat_type: `${searchParams.get('chat_type')}`,
     ai_model_id: `${searchParams.get('ai_model_id')}`,
     quantization: `${searchParams.get('quantization')}`,
     gguf_file_name: `${searchParams.get('gguf_file_name')}`,
   }).toString();
+  // const loading = state.ai_model_name === '';
+  const loading = false;
+  state.messages = [
+    { content: ['hello, I am mario'], source: 'user' },
+    {
+      content: [
+        'hi',
+        [
+          ['I am', 0.5],
+          ['I will', 0.5],
+        ],
+        [
+          ['how', 0.8],
+          ['I', 0.2],
+        ],
+      ],
+      source: 'ai',
+    },
+    { content: ['how are you'], source: 'user' },
+  ];
 
   const memoizedOptions = useMemo(
     () => ({
       onMessage: (message: MessageEvent) => {
-        if (isLoadingModel.current) {
-          // First response is just the model info
-          isLoadingModel.current = false;
-          dispatch({
-            type: 'SET_MODEL_INFO',
-            payload: JSON.parse(message.data),
-          });
-        } else {
-          // Subsequent responses are the text generation responses
-          const data: TextGenerationResponse = JSON.parse(message.data);
-          if (data.end) {
-            // Indicate that the model is done generating the response
+        const data = JSON.parse(message.data);
+        switch (data.type_id) {
+          case responseTypeId.MODEL_INFO:
             dispatch({
-              type: 'STOP_GENERATING_RESPONSE',
+              type: 'SET_MODEL_INFO',
+              payload: data.payload,
             });
-          } else {
-            if (refreshingAt.current !== null) {
-              // Replace the word list at refreshingAt with the new list
-              dispatch({
-                type: 'UPDATE_CURRENT_WORD_PROB_LISTS_AT',
-                index: refreshingAt.current,
-                newWordProbList: data.response,
-              });
-              refreshingAt.current = null;
-            } else {
-              dispatch({
-                type: 'APPEND_CURRENT_WORD_PROB_LISTS',
-                payload: data.response,
-              });
-            }
-          }
+            break;
+          case responseTypeId.NEW_MESSAGE:
+            dispatch({
+              type: 'APPEND_TO_LAST_MESSAGE',
+              content: data.content,
+              source: data.source,
+            });
+            break;
+          case responseTypeId.NEW_MESSAGE_END:
+            dispatch({
+              type: 'INSERT_TRIE',
+            });
+            break;
+          case responseTypeId.REFRESH_WORD:
+            dispatch({
+              type: 'REFRESH_WORD_AT',
+              i: data.i,
+              j: data.j,
+              wordProbList: data.wordProbList,
+            });
+            break;
         }
       },
     }),
@@ -80,100 +145,91 @@ const WebSocketComponent = () => {
     [queryString]
   );
 
-  const { sendMessageToWebsocket, isConnected } = useWebsocket(
+  const { sendToWebsocket, isConnected } = useWebsocket(
     memoizedUrl,
     memoizedOptions
   );
 
-  useEffect(() => {
-    if (!state.generatingResponse) {
-      // Cache the generated tokens in the trie
-      insertTrie(state.currentWordProbLists);
-    }
-  }, [state.generatingResponse, insertTrie, state.currentWordProbLists]);
-
   // Send message function
-  const sendMessage = useCallback(
-    (message: string, temperature: number, maxNewTokens: number) => {
-      console.log('Sending message:', message);
-      const messageWithPayload = JSON.stringify({
-        prompt: message,
-        temperature: temperature,
-        max_new_tokens: maxNewTokens,
-      });
-      sendMessageToWebsocket(messageWithPayload);
+  const sendRequest = useCallback(
+    (request: ChatRequest) => {
+      sendToWebsocket(JSON.stringify(request));
     },
-    [sendMessageToWebsocket]
+    [sendToWebsocket]
   );
 
   const handleWordPick = useCallback(
-    (index: number, word: string) => {
+    (i: number, j: number, word: string) => {
       // Check if the whole words tree up to word is in the trie already
-      const prev_words_tree = state.currentWordProbLists
-        .slice(0, index)
-        .map((wpList) => wpList[0][0]);
-      const searchResults = searchTrie([...prev_words_tree, word]);
+      const slicedMessage = messagesUpTo(state.messages, i, j);
+      const searchResults = state.trie.searchAndReturn(slicedMessage);
 
       if (searchResults) {
         // If the word is in the trie, use that instead of generating new tokens
         dispatch({
-          type: 'SELECT_CACHED_WORD',
-          cachedWordProbLists: searchResults,
+          type: 'SET_MESSAGES',
+          messages: searchResults,
         });
       } else {
         // If the word is not in the trie, generate new tokens
         dispatch({
-          type: 'SELECT_NEW_WORD',
-          index: index,
-          prevWord: state.currentWordProbLists[index][0][0],
+          type: 'SELECT_NEW_WORD_AT',
+          i: i,
+          j: j,
           newWord: word,
+          prevWord: slicedMessage[i].content[j][0][0],
         });
 
-        const newMessage =
-          state.originalPrompt + prev_words_tree.join('') + word;
-        sendMessage(newMessage, state.temperature, state.maxNewTokens);
+        sendRequest({
+          type_id: 1,
+          i: i,
+          j: j,
+          new_word: word,
+        });
       }
     },
-    [
-      state.currentWordProbLists,
-      searchTrie,
-      state.originalPrompt,
-      dispatch,
-      sendMessage,
-      state.temperature,
-      state.maxNewTokens,
-    ]
+    [dispatch, sendRequest, state.messages, state.trie]
   );
   const handleRefresh = useCallback(
-    (index: number) => {
-      refreshingAt.current = index;
-      sendMessage(
-        state.originalPrompt +
-          state.currentWordProbLists
-            .slice(0, index)
-            .map((wpList) => wpList[0][0])
-            .join(''),
-        state.temperature,
-        1 // maxNewTokens
-      );
+    (i: number, j: number) => {
+      sendRequest({ type_id: 3, i: i, j: j } as RefreshWordRequest);
     },
-    [
-      state.currentWordProbLists,
-      state.originalPrompt,
-      sendMessage,
-      state.temperature,
-    ]
+    [sendRequest]
   );
   const onSendClick = () => {
-    dispatch({ type: 'SEND_NEW_MESSAGE', inputMessage: state.inputMessage });
-    clearTrie();
-    sendMessage(state.inputMessage, state.temperature, state.maxNewTokens);
+    if (searchParams.get('type') === ChatType.TEXT_GENERATION) {
+      dispatch({
+        type: 'RESET_AND_SEND_NEW_MESSAGE',
+        content: state.inputMessage,
+        source: 'ai',
+      });
+      sendRequest({
+        type_id: 0,
+        content: state.inputMessage,
+        source: 'ai',
+        i: 0,
+        j: 0,
+      });
+    } else if (searchParams.get('type') === ChatType.CHAT) {
+      dispatch({
+        type: 'SEND_NEW_MESSAGE',
+        content: state.inputMessage,
+        source: 'user',
+      });
+      sendRequest({
+        type_id: 0,
+        content: state.inputMessage,
+        source: 'ai',
+        i: -1,
+        j: 0,
+      });
+    }
   };
 
   return (
     <>
-      {isLoadingModel.current && <Loader />}
-      {!isLoadingModel.current && (
+      {loading && <Loader />}
+      {!loading && (
         <div className="flex flex-row h-screen w-full">
           <ChatSidePanel
             state={state}
@@ -181,31 +237,20 @@ const WebSocketComponent = () => {
             dispatch={dispatch}
           />
           <div className="flex flex-col w-full">
-            <div className="flex flex-wrap m-20">
-              <text>{state.originalPrompt}</text>
-              {state.currentWordProbLists.map((wordProbList, index) => (
-                <WordDropdown
-                  key={index}
-                  index={index}
-                  isOpen={state.openedWord === index}
-                  wordList={wordProbList}
-                  onWordClick={(index) =>
-                    state.openedWord === index
-                      ? dispatch({ type: 'CLOSE_OPENED_WORD' })
-                      : dispatch({ type: 'SET_OPENED_WORD', payload: index })
-                  }
-                  onWordPick={handleWordPick}
-                  handleRefresh={handleRefresh}
-                />
-              ))}
-            </div>
+            <MessagesDisplay
+              messages={state.messages}
+              state={state}
+              dispatch={dispatch}
+              onWordPick={handleWordPick}
+              onRefreshClick={handleRefresh}
+            />
             <div className="mt-auto w-full flex flex-row p-8 pr-16 relative">
               <textarea
                 value={state.inputMessage}
                 onChange={(e) =>
                   dispatch({
                     type: 'SET_INPUT_MESSAGE',
-                    payload: e.target.value,
+                    inputMessage: e.target.value,
                   })
                 }
                 placeholder="Type your message"
@@ -233,3 +278,70 @@ const WebSocketComponent = () => {
 };
 
 export default Page;
+
+const messagesUpTo = (messages: Message[], i: number, j: number) => {
+  const m = messages.slice(0, i + 1);
+  m[i] = { ...m[i], content: m[i].content.slice(0, j + 1) };
+  return m;
+};
+
+interface MessagesDisplayProps {
+  messages: Message[];
+  state: baseChatState;
+  dispatch: Dispatch<baseChatAction>;
+  onWordPick: (i: number, j: number, word: string) => void;
+  onRefreshClick: (i: number, j: number) => void;
+}
+
+const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
+  messages,
+  state,
+  dispatch,
+  onWordPick,
+  onRefreshClick,
+}) => {
+  return (
+    <div className="flex flex-col mr-32 mt-28">
+      {messages.map((message, i) => {
+        if (message.source === 'user') {
+          return (
+            <div className="ml-auto bg-background-400" key={i}>
+              {message.content[0]}
+            </div>
+          );
+        } else {
+          return (
+            <div key={i} className="flex flex-wrap m-20">
+              {message.content.map((item, j) => {
+                if (typeof item === 'string') {
+                  return <div key={j}>{item}</div>;
+                } else {
+                  return (
+                    <WordDropdown
+                      key={j}
+                      isOpen={
+                        state.openedWord_i === i && state.openedWord_j === j
+                      }
+                      wordList={item}
+                      onWordClick={() =>
+                        state.openedWord_i === i && state.openedWord_j === j
+                          ? dispatch({ type: 'SET_OPENED_WORD', i: -1, j: -1 })
+                          : dispatch({
+                              type: 'SET_OPENED_WORD',
+                              i: i,
+                              j: j,
+                            })
+                      }
+                      onWordPick={(word) => onWordPick(i, j, word)}
+                      onRefreshClick={() => onRefreshClick(i, j)}
+                    />
+                  );
+                }
+              })}
+            </div>
+          );
+        }
+      })}
+    </div>
+  );
+};

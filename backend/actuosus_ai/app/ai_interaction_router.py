@@ -4,11 +4,14 @@ import torch
 from fastapi import APIRouter, WebSocket, Depends, WebSocketDisconnect
 from pydantic import BaseModel
 
-from actuosus_ai.ai_interaction.ai_chat_service import AIChatService
+from actuosus_ai.ai_interaction.chat_websocket_orchestrator import (
+    ChatWebSocketOrchestrator,
+)
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.app.dependency import (
     get_text_generation_service,
     get_ai_chat_service,
+    get_chat_websocket_orchestrator,
 )
 
 router = APIRouter()
@@ -28,7 +31,7 @@ class TextGenerationResponseWithAlt(BaseModel):
 
 
 class ModelConnectionSuccessResponse(BaseModel):
-    name: str
+    ai_model_name: str
     estimated_ram: float
     estimated_vram: float
 
@@ -52,7 +55,7 @@ async def websocket_text_generation_endpoint(
     )
     await websocket.send_json(
         ModelConnectionSuccessResponse(
-            name=text_generation_service.ai_model_name,
+            ai_model_name=text_generation_service.ai_model_name,
             estimated_ram=text_generation_service.estimated_ram,
             estimated_vram=text_generation_service.estimated_vram,
         ).model_dump()
@@ -95,41 +98,30 @@ async def websocket_chat_endpoint(
     ai_model_id: int,
     quantization: Optional[str] = "float16",
     gguf_file_name: Optional[str] = None,
-    ai_chat_service: AIChatService = Depends(get_ai_chat_service),
+    chat_websocket_orchestrator: ChatWebSocketOrchestrator = Depends(
+        get_chat_websocket_orchestrator
+    ),
 ) -> None:
     """Always add an empty {"role": "assistant", "content": ""} at the end of the messages list if the last message is from the user"""
     await websocket.accept()
     # Receive onopen info about how to load the model
-    await ai_chat_service.load_model(
+    await chat_websocket_orchestrator.load(
+        websocket=websocket,
         ai_model_id=ai_model_id,
         quantization=quantization,
         gguf_file_name=gguf_file_name,
     )
     await websocket.send_json(
         ModelConnectionSuccessResponse(
-            name=ai_chat_service.ai_model_name,
-            estimated_ram=ai_chat_service.estimated_ram,
-            estimated_vram=ai_chat_service.estimated_vram,
+            ai_model_name=chat_websocket_orchestrator.ai_model_name,
+            estimated_ram=chat_websocket_orchestrator.estimated_ram,
+            estimated_vram=chat_websocket_orchestrator.estimated_vram,
         ).model_dump()
     )
     try:
-        while True:
-            data = AIChatRequest(**await websocket.receive_json())
-            for (
-                new_tokens_list
-            ) in ai_chat_service.generate_chat_tokens_with_probabilities(
-                **data.model_dump(),
-            ):
-                await websocket.send_json(
-                    TextGenerationResponseWithAlt(
-                        response=new_tokens_list, end=False
-                    ).model_dump()
-                )
-            await websocket.send_json(
-                TextGenerationResponseWithAlt(response=[], end=True).model_dump()
-            )
+        await chat_websocket_orchestrator.run()
     except WebSocketDisconnect:
-        del ai_chat_service.model
+        del chat_websocket_orchestrator.model
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

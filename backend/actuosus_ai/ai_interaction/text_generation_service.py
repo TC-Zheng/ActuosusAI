@@ -20,6 +20,8 @@ from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorage
 from actuosus_ai.common.actuosus_exception import NotFoundException, ValidationException
 from actuosus_ai.common.utils import get_memory_footprint
 
+WordProbList = List[Tuple[str, float]]
+
 
 class TextGenerationService:
     def __init__(self, storage_service: AIModelStorageService):
@@ -140,7 +142,7 @@ class TextGenerationService:
         temperature: float,
         min_prob: float,
         is_chat: bool = False,
-    ) -> Generator[List[Tuple[str, float]], None, None]:
+    ) -> Generator[WordProbList, None, None]:
         if not is_chat:
             prompt_tokens = torch.tensor(self.tokenizer.encode(prompt))
             if max_length:
@@ -179,7 +181,7 @@ class TextGenerationService:
         k: int,
         temperature: float,
         min_prob: float,
-    ) -> Generator[List[Tuple[str, float]], None, None]:
+    ) -> Generator[WordProbList, None, None]:
         prompt_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.device
         )
@@ -214,7 +216,7 @@ class TextGenerationService:
         k: int = 10,
         temperature: float = 1.0,
         min_prob: float = 0.001,
-    ) -> Generator[List[Tuple[str, float]], None, None]:
+    ) -> Generator[WordProbList, None, None]:
         if self.gguf:
             yield from self.generate_tokens_with_probabilities_gguf(
                 prompt=prompt,

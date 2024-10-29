@@ -1,21 +1,11 @@
 import { useReducer } from 'react';
+import { MessageTrie } from '@/app/models/hooks/useMessageTrie';
 
 export type WordProbList = [string, number][];
-export type ModelInfo = {
-  name: string;
-  estimated_ram: number;
-  estimated_vram: number;
-};
-export enum MessageSource {
-  USER = 'USER',
-  AI = 'AI',
-  NONE = 'NONE',
-}
 export enum WordStatus {
   PREVIOUS = -1,
   PICKED = -2,
 }
-
 export type Message = {
   content: (WordProbList | string)[];
   source: string;
@@ -24,16 +14,37 @@ export type Message = {
 export type baseChatState = {
   messages: Message[];
   inputMessage: string;
-  originalPrompt: string;
-  generatingResponse: boolean;
   openedWord_i: number;
   openedWord_j: number;
-  modelInfo: ModelInfo | null;
+  ai_model_name: string;
+  estimated_ram: number;
+  estimated_vram: number;
   temperature: number;
   maxNewTokens: number;
+  min_prob: number;
+  trie: MessageTrie;
+};
+
+const initialState: baseChatState = {
+  messages: [],
+  inputMessage: '',
+  openedWord_i: -1,
+  openedWord_j: -1,
+  ai_model_name: '',
+  estimated_ram: 0,
+  estimated_vram: 0,
+  temperature: 1,
+  maxNewTokens: 100,
+  min_prob: 0.0001,
+  trie: new MessageTrie(),
 };
 
 export type baseChatAction =
+  | {
+      type: 'APPEND_TO_LAST_MESSAGE';
+      source: string;
+      content: string | WordProbList;
+    }
   | {
       type: 'SELECT_NEW_WORD_AT';
       i: number;
@@ -41,189 +52,194 @@ export type baseChatAction =
       prevWord: string;
       newWord: string;
     }
-  | { type: 'SET_MESSAGES'; messages: Message[] }
-  | { type: 'APPEND_NEW_AI_MESSAGE'; wordProbList: WordProbList }
   | {
-      type: 'UPDATE_WORD_PROB_LIST_AT';
+      type: 'RESET_AND_SEND_NEW_MESSAGE';
+      content: string;
+      source: string;
+    }
+  | {
+      type: 'SEND_NEW_MESSAGE';
+      content: string;
+      source: string;
+    }
+  | {
+      type: 'REFRESH_WORD_AT';
       i: number;
       j: number;
       wordProbList: WordProbList;
     }
   | {
-      type: 'EDIT_MESSAGE_AT';
+      type: 'SET_MESSAGES';
+      messages: Message[];
+    }
+  | {
+      type: 'SET_INPUT_MESSAGE';
+      inputMessage: string;
+    }
+  | {
+      type: 'SET_OPENED_WORD';
       i: number;
       j: number;
-      message: Message;
     }
-  | { type: 'CREATE_NEW_USER_MESSAGE'; inputString: string }
-  | { type: 'STOP_GENERATING_RESPONSE' }
-  | { type: 'APPEND_CURRENT_WORD_PROB_LISTS'; payload: WordProbList }
-  | { type: 'SET_INPUT_MESSAGE'; payload: string }
-  | { type: 'SEND_NEW_MESSAGE'; inputMessage: string }
-  | { type: 'SET_OPENED_WORD'; payload: number }
-  | { type: 'CLOSE_OPENED_WORD' }
-  | { type: 'SET_MODEL_INFO'; payload: ModelInfo | null }
-  | { type: 'SET_TEMPERATURE'; payload: number }
-  | { type: 'SET_MAX_NEW_TOKENS'; payload: number };
-
-const initialState: baseChatState = {
-  messages: [],
-  inputMessage: '',
-  originalPrompt: '',
-  generatingResponse: false,
-  openedWord_i: -1,
-  openedWord_j: -1,
-  modelInfo: null,
-  temperature: 1,
-  maxNewTokens: 100,
-};
-
-function appendNewAIMessage(messages: Message[], wordProbList: WordProbList) {
-  const lastMessage = messages.at(-1);
-  let newMessage;
-  if (lastMessage !== undefined && isAIMessage(lastMessage)) {
-    newMessage = JSON.parse(JSON.stringify(lastMessage));
-    newMessage.content.push(wordProbList);
-    return [...messages.slice(0, messages.length - 1), newMessage];
-  } else {
-    newMessage = {
-      content: [wordProbList],
-      source: MessageSource.AI,
-    } as AIMessage;
-    return [...messages, newMessage];
-  }
-}
-
-function refreshWordProbListAt(
-  messages: Message[],
-  i: number,
-  j: number,
-  wordProbList: WordProbList
-): Message[] {
-  const targetMessage = messages[i] as {
-    content: (WordProbList | string)[];
-    source: MessageSource.AI;
-  };
-  const targetWordProbList = targetMessage.content[j] as WordProbList;
-  const updatedWordProbList = [targetWordProbList[0]].concat(
-    wordProbList
-  ) as WordProbList;
-  const newMessage = {
-    content: [
-      ...targetMessage.content.slice(0, j),
-      updatedWordProbList,
-      ...targetMessage.content.slice(j + 1),
-    ],
-    source: targetMessage.source,
-  } as Message;
-  return [...messages.slice(0, i), newMessage, ...messages.slice(i + 1)];
-}
+  | {
+      type: 'SET_MODEL_INFO';
+      payload: {
+        ai_model_name: string;
+        estimated_ram: number;
+        estimated_vram: number;
+      };
+    }
+  | {
+      type: 'SET_TEMPERATURE';
+      temperature: number;
+    }
+  | {
+      type: 'SET_MAX_NEW_TOKENS';
+      maxNewTokens: number;
+    }
+  | {
+      type: 'SET_MIN_PROB';
+      min_prob: number;
+    }
+  | {
+      type: 'INSERT_TRIE';
+    };
 
 const reducer = (
   state: baseChatState,
   action: baseChatAction
 ): baseChatState => {
   switch (action.type) {
-    case 'SET_MESSAGES':
+    case 'APPEND_TO_LAST_MESSAGE':
       return {
         ...state,
-        openedWord_i: -1,
-        openedWord_j: -1,
-        messages: action.messages,
+        messages: appendToLastMessage(
+          state.messages,
+          action.source,
+          action.content
+        ),
       };
     case 'SELECT_NEW_WORD_AT':
-      const newMessage = JSON.parse(JSON.stringify(state.messages[action.i]));
+      const newMessage = copyObject(state.messages[action.i]);
       newMessage.content[action.j] = [
         [action.newWord, WordStatus.PICKED],
         [action.prevWord, WordStatus.PREVIOUS],
       ];
       return {
         ...state,
-        generatingResponse: true,
         openedWord_i: -1,
         openedWord_j: -1,
         messages: [...state.messages.slice(0, action.i), newMessage],
       };
-    case 'CREATE_NEW_USER_MESSAGE':
+    case 'REFRESH_WORD_AT':
       return {
         ...state,
-        messages: [
-          ...state.messages,
-          {
-            content: action.inputString,
-            source: MessageSource.USER,
-          } as UserMessage,
-        ],
-        generatingResponse: true,
-        inputMessage: '',
-        openedWord_i: -1,
-        openedWord_j: -1,
-      };
-    case 'APPEND_NEW_AI_MESSAGE':
-      return {
-        ...state,
-        messages: appendNewAIMessage(state.messages, action.wordProbList),
-      };
-    case 'UPDATE_WORD_PROB_LIST_AT':
-      return {
-        ...state,
-        messages: refreshWordProbListAt(
+        messages: refreshWordAt(
           state.messages,
           action.i,
           action.j,
           action.wordProbList
         ),
       };
-    case 'EDIT_MESSAGE_AT':
+    case 'RESET_AND_SEND_NEW_MESSAGE':
       return {
         ...state,
-        messages: editMessageAt(
-          state.messages,
-          action.i,
-          action.j,
-          action.message
-        ),
+        messages: appendToLastMessage([], action.source, action.content),
+        openedWord_i: -1,
+        openedWord_j: -1,
+        inputMessage: '',
       };
-    case 'CLOSE_OPENED_WORD':
-      return { ...state, openedWord_i: -1, openedWord_j: -1 };
-    case 'STOP_GENERATING_RESPONSE':
-      return { ...state, generatingResponse: false };
-    case 'SET_OPENED_WORD':
-      return { ...state, openedWord: action.payload };
-    case 'SET_MODEL_INFO':
-      return { ...state, modelInfo: action.payload };
-    case 'SET_TEMPERATURE':
-      return { ...state, temperature: action.payload };
-    case 'SET_MAX_NEW_TOKENS':
-      return { ...state, maxNewTokens: action.payload };
+    case 'SEND_NEW_MESSAGE':
+      return {
+        ...state,
+        messages: appendToLastMessage(
+          state.messages,
+          action.source,
+          action.content
+        ),
+        openedWord_i: -1,
+        openedWord_j: -1,
+        inputMessage: '',
+      };
+    case 'SET_MESSAGES':
+      return {
+        ...state,
+        messages: action.messages,
+      };
     case 'SET_INPUT_MESSAGE':
-      return { ...state, inputMessage: action.payload };
+      return {
+        ...state,
+        inputMessage: action.inputMessage,
+      };
+    case 'SET_OPENED_WORD':
+      return {
+        ...state,
+        openedWord_i: action.i,
+        openedWord_j: action.j,
+      };
+    case 'SET_MODEL_INFO':
+      return {
+        ...state,
+        ai_model_name: action.payload.ai_model_name,
+        estimated_ram: action.payload.estimated_ram,
+        estimated_vram: action.payload.estimated_vram,
+      };
+    case 'SET_TEMPERATURE':
+      return {
+        ...state,
+        temperature: action.temperature,
+      };
+    case 'SET_MAX_NEW_TOKENS':
+      return {
+        ...state,
+        maxNewTokens: action.maxNewTokens,
+      };
+    case 'SET_MIN_PROB':
+      return {
+        ...state,
+        min_prob: action.min_prob,
+      };
+    case 'INSERT_TRIE':
+      const newTrie = copyObject(state.trie);
+      newTrie.insert(state.messages);
+      return {
+        ...state,
+        trie: newTrie,
+      };
     default:
       return state;
   }
 };
+const copyObject = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
-const editMessageAt = (
+const appendToLastMessage = (
+  messages: Message[],
+  source: string,
+  content: string | WordProbList
+): Message[] => {
+  if (messages[messages.length - 1]?.source === source) {
+    const lastMessage = copyObject(messages[messages.length - 1]);
+    lastMessage.content.push(content);
+    return [...messages.slice(0, -1), lastMessage];
+  } else {
+    return [...messages, { content: [content], source }];
+  }
+};
+function refreshWordAt(
   messages: Message[],
   i: number,
   j: number,
-  message: Message
-) => {
-  if (isAIMessage(message)) {
-    const targetMessage = JSON.parse(JSON.stringify(messages[i])) as AIMessage;
-    targetMessage.content = [
-      ...targetMessage.content.slice(0, j),
-      ...message.content,
-    ];
-    return [...messages.slice(0, i), targetMessage];
-  } else {
-    const targetMessage = JSON.parse(
-      JSON.stringify(messages[i])
-    ) as UserMessage;
-    targetMessage.content = message.content;
-    return [...messages.slice(0, i), targetMessage];
-  }
-};
+  wordProbList: WordProbList
+): Message[] {
+  const newMessage = copyObject(messages[i]);
+  newMessage.content[j] = [
+    newMessage.content[j][0],
+    ...wordProbList.filter(
+      (wordProb) => wordProb[0] !== newMessage.content[j][0]
+    ),
+  ] as WordProbList;
+  return [...messages.slice(0, i), newMessage, ...messages.slice(i + 1)];
+}
 
 const useChatReducer = () => useReducer(reducer, initialState);
 

@@ -13,7 +13,7 @@ export const useWebsocket = (url: string, options?: UseWebsocketOptions) => {
   const websocketRef = useRef<WebSocket | null>(null);
 
   // Function to send a message via the WebSocket
-  const sendMessageToWebsocket = useCallback((message: string) => {
+  const sendToWebsocket = useCallback((message: string) => {
     if (
       websocketRef.current &&
       websocketRef.current.readyState === WebSocket.OPEN
@@ -68,7 +68,7 @@ export const useWebsocket = (url: string, options?: UseWebsocketOptions) => {
   return {
     isConnected,
     isConnecting,
-    sendMessageToWebsocket,
+    sendToWebsocket,
     closeConnection,
   };
 };

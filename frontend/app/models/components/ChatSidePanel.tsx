@@ -18,18 +18,18 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
         Go Back
       </button>
       <h2 className="font-bold text-md text-primary-900">Model name</h2>
-      <p className="text-primary-700 text-sm">{state.modelInfo?.name}</p>
+      <p className="text-primary-700 text-sm">{state.ai_model_name}</p>
       <h2 className="font-bold text-l text-primary-900">
         Estimated RAM usage:
       </h2>
       <p className="text-primary-700 text-sm">
-        {Math.max(0, state.modelInfo?.estimated_ram ?? 0).toFixed(2)} GB
+        {Math.max(0, state.estimated_ram ?? 0).toFixed(2)} GB
       </p>
       <h2 className="font-bold text-md text-primary-900">
         Estimated VRAM usage:
       </h2>
       <p className="text-primary-700 text-sm">
-        {Math.max(0, state.modelInfo?.estimated_vram ?? 0).toFixed(2)} GB
+        {Math.max(0, state.estimated_vram ?? 0).toFixed(2)} GB
       </p>
       <h2 className="font-bold text-md text-primary-900">Connection Status</h2>
       <p className="text-primary-700 text-sm">
@@ -46,7 +46,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
           onChange={(e) =>
             dispatch({
               type: 'SET_TEMPERATURE',
-              payload: parseFloat(e.target.value),
+              temperature: parseFloat(e.target.value),
             })
           }
           className="flex-grow"
@@ -60,7 +60,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
           onChange={(e) =>
             dispatch({
               type: 'SET_TEMPERATURE',
-              payload: parseFloat(e.target.value),
+              temperature: parseFloat(e.target.value),
             })
           }
           className="ml-2 w-12 text-center bg-background-400"
@@ -76,7 +76,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
           onChange={(e) =>
             dispatch({
               type: 'SET_MAX_NEW_TOKENS',
-              payload: parseFloat(e.target.value),
+              maxNewTokens: parseFloat(e.target.value),
             })
           }
           className="flex-grow"
@@ -90,7 +90,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
           onChange={(e) =>
             dispatch({
               type: 'SET_MAX_NEW_TOKENS',
-              payload: parseFloat(e.target.value),
+              maxNewTokens: parseFloat(e.target.value),
             })
           }
           className="ml-2 w-12 text-center bg-background-400"

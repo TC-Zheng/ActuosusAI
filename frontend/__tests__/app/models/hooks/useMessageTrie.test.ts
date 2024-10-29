@@ -1,9 +1,5 @@
 import { MessageTrie } from '@/app/models/hooks/useMessageTrie';
-import {
-  Message,
-  MessageSource,
-  WordProbList,
-} from '@/app/models/hooks/chatReducer';
+import { Message, WordProbList } from '@/app/models/hooks/chatReducer';
 
 describe('MessageTrie', () => {
   let trie: MessageTrie;
@@ -13,31 +9,14 @@ describe('MessageTrie', () => {
   });
 
   describe('insert', () => {
-    it('should insert a simple user message correctly', () => {
-      const messages: Message[] = [
-        { content: 'hello', source: MessageSource.USER },
-      ];
+    it('should insert a simple user message correctly with a string', () => {
+      const messages: Message[] = [{ content: ['hello'], source: 'user' }];
 
       trie.insert(messages);
 
       expect(trie.root.children['hello']).toBeDefined();
-      expect(trie.root.children['hello'].source).toBe(MessageSource.USER);
-      expect(trie.root.children['hello'].index).toBe(0);
-    });
-
-    it('should insert an AI message with string content correctly', () => {
-      const messages: Message[] = [
-        {
-          content: ['response'],
-          source: MessageSource.AI,
-        },
-      ];
-
-      trie.insert(messages);
-
-      expect(trie.root.children['response']).toBeDefined();
-      expect(trie.root.children['response'].source).toBe(MessageSource.AI);
-      expect(trie.root.children['response'].index).toBe(0);
+      expect(trie.root.children['hello'].source).toBe('user');
+      expect(trie.root.children['hello'].content).toEqual([]);
     });
 
     it('should insert an AI message with WordProbList content correctly', () => {
@@ -47,21 +26,25 @@ describe('MessageTrie', () => {
       ];
       const messages: Message[] = [
         {
-          content: [wordProbList],
-          source: MessageSource.AI,
+          content: ['string text', wordProbList],
+          source: 'ai',
         },
       ];
 
       trie.insert(messages);
 
-      expect(trie.root.children['test']).toBeDefined();
-      expect(trie.root.children['test'].source).toBe(MessageSource.AI);
-      expect(trie.root.children['test'].content).toEqual(wordProbList);
+      expect(trie.root.children['string text']).toBeDefined();
+      expect(trie.root.children['string text'].source).toBe('ai');
+      expect(trie.root.children['string text'].content).toEqual([]);
+      expect(trie.root.children['string text'].children['test']).toBeDefined();
+      expect(
+        trie.root.children['string text'].children['test'].content
+      ).toEqual(wordProbList);
     });
 
     it('should handle a conversation sequence correctly', () => {
       const messages: Message[] = [
-        { content: 'hello', source: MessageSource.USER },
+        { content: ['hello'], source: 'user' },
         {
           content: [
             'hi',
@@ -70,24 +53,24 @@ describe('MessageTrie', () => {
               ['I', 0.2],
             ],
           ],
-          source: MessageSource.AI,
+          source: 'ai',
         },
-        { content: 'good', source: MessageSource.USER },
+        { content: ['good'], source: 'user' },
       ];
 
       trie.insert(messages);
 
       let node = trie.root.children['hello'];
       expect(node).toBeDefined();
-      expect(node.source).toBe(MessageSource.USER);
+      expect(node.source).toBe('user');
 
       node = node.children['hi'];
       expect(node).toBeDefined();
-      expect(node.source).toBe(MessageSource.AI);
+      expect(node.source).toBe('ai');
 
       node = node.children['how'];
       expect(node).toBeDefined();
-      expect(node.source).toBe(MessageSource.AI);
+      expect(node.source).toBe('ai');
       expect(node.content).toEqual([
         ['how', 0.8],
         ['I', 0.2],
@@ -95,21 +78,42 @@ describe('MessageTrie', () => {
 
       node = node.children['good'];
       expect(node).toBeDefined();
-      expect(node.source).toBe(MessageSource.USER);
+      expect(node.source).toBe('user');
     });
   });
 
   describe('searchAndReturn', () => {
     it('should return null for non-existent message sequence', () => {
       const result = trie.searchAndReturn([
-        { content: 'nonexistent', source: MessageSource.USER },
+        { content: ['nonexistent'], source: 'user' },
       ]);
       expect(result).toBeNull();
     });
 
-    it('should return complete conversation history for messages ending with user', () => {
+    it('should return complete conversation history', () => {
       const messages: Message[] = [
-        { content: 'hello', source: MessageSource.USER },
+        { content: ['hello'], source: 'user' },
+        {
+          content: [
+            'hi',
+            [
+              ['I am', 0.5],
+              ['I will', 0.5],
+            ],
+            [
+              ['how', 0.8],
+              ['I', 0.2],
+            ],
+          ],
+          source: 'ai',
+        },
+        { content: ['how are you'], source: 'user' },
+      ];
+
+      trie.insert(messages);
+
+      const searchResult = trie.searchAndReturn([
+        { content: ['hello'], source: 'user' },
         {
           content: [
             'hi',
@@ -118,52 +122,8 @@ describe('MessageTrie', () => {
               ['I will', 0.5],
             ],
           ],
-          source: MessageSource.AI,
+          source: 'ai',
         },
-        { content: 'how are you', source: MessageSource.USER },
-      ];
-
-      trie.insert(messages);
-
-      const searchResult = trie.searchAndReturn([
-        { content: 'hello', source: MessageSource.USER },
-      ]);
-
-      expect(searchResult).toEqual(messages);
-    });
-    it('should return complete conversation history for messages ending with AI', () => {
-      const messages: Message[] = [
-        { content: 'hello', source: MessageSource.USER },
-        {
-          content: [
-            'hi',
-            [
-              ['I am', 0.5],
-              ['I will', 0.5],
-            ],
-          ],
-          source: MessageSource.AI,
-        },
-        { content: 'how are you', source: MessageSource.USER },
-        {
-          content: [
-            [
-              ['A', 0.5],
-              ['B', 0.5],
-            ],
-            [
-              ['C', 0.5],
-              ['D', 0.5],
-            ],
-          ],
-          source: MessageSource.AI,
-        },
-      ];
-
-      trie.insert(messages);
-
-      const searchResult = trie.searchAndReturn([
-        { content: 'hello', source: MessageSource.USER },
       ]);
 
       expect(searchResult).toEqual(messages);
@@ -172,16 +132,13 @@ describe('MessageTrie', () => {
 
   describe('clear', () => {
     it('should reset the trie to empty state', () => {
-      const messages: Message[] = [
-        { content: 'hello', source: MessageSource.USER },
-      ];
+      const messages: Message[] = [{ content: ['hello'], source: 'user' }];
 
       trie.insert(messages);
       trie.clear();
 
       expect(trie.root.children).toEqual({});
-      expect(trie.root.index).toBe(-1);
-      expect(trie.root.source).toBe(MessageSource.NONE);
+      expect(trie.root.source).toBe('');
     });
   });
 
@@ -190,23 +147,35 @@ describe('MessageTrie', () => {
       trie.insert([]);
       expect(trie.root.children).toEqual({});
     });
+  });
 
-    it('should handle AI messages with mixed content types', () => {
-      const wordProbList: WordProbList = [['probability', 0.7]];
+  describe('serialize', () => {
+    it('should serialize the trie to a JSON string and back', () => {
       const messages: Message[] = [
+        { content: ['hello'], source: 'user' },
         {
-          content: ['string content', wordProbList],
-          source: MessageSource.AI,
+          content: [
+            'hi',
+            [
+              ['I am', 0.5],
+              ['I will', 0.5],
+            ],
+          ],
+          source: 'ai',
         },
+        { content: ['how are you'], source: 'user' },
       ];
 
       trie.insert(messages);
 
-      expect(trie.root.children['string content']).toBeDefined();
-      const probNode =
-        trie.root.children['string content'].children['probability'];
-      expect(probNode).toBeDefined();
-      expect(probNode.content).toEqual(wordProbList);
+      const serialized = trie.serialize();
+
+      expect(serialized).toEqual(
+        '{"children":{"hello":{"children":{"hi":{"children":{"I am":{"children":{"how are you":{"children":{},"content":[],"source":"user"}},"content":[["I am",0.5],["I will",0.5]],"source":"ai"}},"content":[],"source":"ai"}},"content":[],"source":"user"}},"content":[],"source":""}'
+      );
+
+      const deserialized = MessageTrie.deserialize(serialized);
+      expect(deserialized).toEqual(trie);
     });
   });
 });
