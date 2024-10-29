@@ -1,17 +1,22 @@
+import { baseChatAction, WordProbList } from '@/app/models/hooks/chatReducer';
+import React, { Dispatch } from 'react';
+
 interface WordDropdownProps {
-  wordList: [string, number][];
+  wordProbList: WordProbList;
   onWordClick: () => void;
   onWordPick: (word: string) => void;
   onRefreshClick: () => void;
   isOpen: boolean;
+  dispatch: Dispatch<baseChatAction>;
 }
 
 export default function WordDropdown({
-  wordList,
+  wordProbList,
   onWordClick,
   onWordPick,
   onRefreshClick,
   isOpen,
+  dispatch,
 }: WordDropdownProps) {
   const formatWordText = (word: [string, number]): string => {
     const [text, value] = word;
@@ -26,10 +31,11 @@ export default function WordDropdown({
 
     return `${text} ${formattedValue}`;
   };
-  const containPreviousSelected = wordList.length > 1 && wordList[1][1] === -1;
+  const containPreviousSelected =
+    wordProbList.length > 1 && wordProbList[1][1] === -1;
   // Remove the first element of wordList if it is the same as the second element, this might happen with refresh button
-  if (wordList.length > 1 && wordList[0][0] === wordList[1][0]) {
-    wordList = wordList.slice(1);
+  if (wordProbList.length > 1 && wordProbList[0][0] === wordProbList[1][0]) {
+    wordProbList = wordProbList.slice(1);
   }
 
   return (
@@ -38,18 +44,18 @@ export default function WordDropdown({
         <button
           onClick={() => onWordClick()}
           className={
-            'hover:text-primary-400 ' +
+            'hover:text-primary-400 rounded-md select-text ' +
             (isOpen
               ? 'text-accent-600'
-              : wordList.length > 1 && wordList[1][1] === -1
-                ? 'text-secondary-600'
+              : wordProbList.length > 1 && wordProbList[1][1] === -1
+                ? 'bg-accent-100'
                 : '')
           }
         >
-          {wordList[0][0]}
+          {wordProbList[0][0]}
         </button>
         {isOpen && (
-          <div className="z-10 absolute bg-background-300 mt-2 w-32 origin-top-right backdrop-blur-md border border-gray-200 divide-y divide-gray-100 rounded-md shadow-lg focus:outline-none flex flex-col">
+          <div className="z-20 absolute bg-background-300 mt-2 w-32 origin-top-right backdrop-blur-md border border-gray-200 divide-y divide-gray-100 rounded-md shadow-lg focus:outline-none flex flex-col">
             {!containPreviousSelected && (
               <button
                 className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
@@ -58,11 +64,15 @@ export default function WordDropdown({
                 Refresh
               </button>
             )}
-            {wordList.map((word) => (
+            {wordProbList.map((word) => (
               <button
                 key={word[0]}
                 className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
-                onClick={() => onWordPick(word[0])}
+                onClick={() => {
+                  if (word[0] !== wordProbList[0][0]) {
+                    onWordPick(word[0]);
+                  }
+                }}
               >
                 {formatWordText(word)}
               </button>

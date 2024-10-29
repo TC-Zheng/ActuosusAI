@@ -42,10 +42,6 @@ class RefreshWordRequest(BaseModel):
     i: int
     j: int
 
-ChatRequest = (
-    NewMessageRequest | SelectWordRequest | ChangeConfigRequest | RefreshWordRequest
-)
-
 
 class ChatWebSocketOrchestrator:
     def __init__(self, ai_chat_service: AIChatService):

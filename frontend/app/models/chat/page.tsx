@@ -1,5 +1,12 @@
 'use client';
-import React, { useCallback, Suspense, useMemo, Dispatch } from 'react';
+import React, {
+  useCallback,
+  Suspense,
+  useMemo,
+  Dispatch,
+  useRef,
+  useEffect,
+} from 'react';
 import WordDropdown from '@/app/models/text_generation/components/WordDropdown';
 import { useWebsocket } from '@/app/hooks/useWebsocket';
 import Loader from '@/app/components/Loader';
@@ -19,10 +26,6 @@ type TextGenerationResponse = {
 export enum ChatType {
   TEXT_GENERATION = 'text_generation',
   CHAT = 'chat',
-}
-
-enum operationType {
-  GENERATE_TEXT = 0,
 }
 
 type NewMessageRequest = {
@@ -76,6 +79,14 @@ const Page = () => {
 const WebSocketComponent = () => {
   const [state, dispatch] = useChatReducer();
   const searchParams = useSearchParams();
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = 'auto';
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
+    }
+  }, [state.inputMessage]);
   const queryString = new URLSearchParams({
     chat_type: `${searchParams.get('chat_type')}`,
     ai_model_id: `${searchParams.get('ai_model_id')}`,
@@ -95,8 +106,11 @@ const WebSocketComponent = () => {
         ],
         [
           ['how', 0.8],
-          ['I', 0.2],
+          ['I', -1],
         ],
+        '-----------------------------------------------------------------------------------------------------------------------------------------------',
+        '--------------------------------------------------------------------------------------------------------',
+        '--------------------------------------------------------------------------------------------------------',
       ],
       source: 'ai',
     },
@@ -231,6 +245,13 @@ const WebSocketComponent = () => {
       {loading && <Loader />}
       {!loading && (
         <div className="flex flex-row h-screen w-full">
+          {/*An overlay purely for closing the word dropdown*/}
+          <div
+            className="fixed inset-0 bg-opacity-0 -z-5"
+            onClick={() => {
+              dispatch({ type: 'SET_OPENED_WORD', i: -1, j: -1 });
+            }}
+          ></div>
           <ChatSidePanel
             state={state}
             isConnected={isConnected}
@@ -246,6 +267,7 @@ const WebSocketComponent = () => {
             />
             <div className="mt-auto w-full flex flex-row p-8 pr-16 relative">
               <textarea
+                ref={textAreaRef}
                 value={state.inputMessage}
                 onChange={(e) =>
                   dispatch({
@@ -305,24 +327,38 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
       {messages.map((message, i) => {
         if (message.source === 'user') {
           return (
-            <div className="ml-auto bg-background-400" key={i}>
+            <p
+              className="ml-auto bg-background-400 rounded-md p-2 z-10"
+              key={i}
+            >
               {message.content[0]}
-            </div>
+            </p>
           );
         } else {
           return (
-            <div key={i} className="flex flex-wrap m-20">
+            <div key={i} className="flex flex-wrap m-20 min-w-32">
               {message.content.map((item, j) => {
                 if (typeof item === 'string') {
-                  return <div key={j}>{item}</div>;
+                  return (
+                    <p
+                      className="z-10"
+                      onClick={() => {
+                        dispatch({ type: 'SET_OPENED_WORD', i: -1, j: -1 });
+                      }}
+                      key={j}
+                    >
+                      {item}
+                    </p>
+                  );
                 } else {
                   return (
                     <WordDropdown
                       key={j}
+                      dispatch={dispatch}
                       isOpen={
                         state.openedWord_i === i && state.openedWord_j === j
                       }
-                      wordList={item}
+                      wordProbList={item}
                       onWordClick={() =>
                         state.openedWord_i === i && state.openedWord_j === j
                           ? dispatch({ type: 'SET_OPENED_WORD', i: -1, j: -1 })

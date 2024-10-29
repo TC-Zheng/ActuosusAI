@@ -13,7 +13,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
   dispatch,
 }) => {
   return (
-    <div className="flex flex-col bg-background-400 max-w-56 min-w-56 text-center">
+    <div className="flex flex-col bg-background-400 max-w-56 min-w-56 text-center z-10">
       <button onClick={() => window.history.back()} className="mb-8 mt-2">
         Go Back
       </button>
