@@ -95,27 +95,27 @@ const WebSocketComponent = () => {
   }).toString();
   // const loading = state.ai_model_name === '';
   const loading = false;
-  state.messages = [
-    { content: ['hello, I am mario'], source: 'user' },
-    {
-      content: [
-        'hi',
-        [
-          ['I am', 0.5],
-          ['I will', 0.5],
-        ],
-        [
-          ['how', 0.8],
-          ['I', -1],
-        ],
-        '-----------------------------------------------------------------------------------------------------------------------------------------------',
-        '--------------------------------------------------------------------------------------------------------',
-        '--------------------------------------------------------------------------------------------------------',
-      ],
-      source: 'ai',
-    },
-    { content: ['how are you'], source: 'user' },
-  ];
+  // state.messages = [
+  //   { content: ['hello, I am mario'], source: 'user' },
+  //   {
+  //     content: [
+  //       'hi',
+  //       [
+  //         ['I am', 0.5],
+  //         ['I will', 0.5],
+  //       ],
+  //       [
+  //         ['how', 0.8],
+  //         ['I', -1],
+  //       ],
+  //       '-----------------------------------------------------------------------------------------------------------------------------------------------',
+  //       '--------------------------------------------------------------------------------------------------------',
+  //       '--------------------------------------------------------------------------------------------------------',
+  //     ],
+  //     source: 'ai',
+  //   },
+  //   { content: ['how are you'], source: 'user' },
+  // ];
 
   const memoizedOptions = useMemo(
     () => ({
@@ -211,7 +211,7 @@ const WebSocketComponent = () => {
     [sendRequest]
   );
   const onSendClick = () => {
-    if (searchParams.get('type') === ChatType.TEXT_GENERATION) {
+    if (searchParams.get('chat_type') === ChatType.TEXT_GENERATION) {
       dispatch({
         type: 'RESET_AND_SEND_NEW_MESSAGE',
         content: state.inputMessage,
@@ -224,7 +224,7 @@ const WebSocketComponent = () => {
         i: 0,
         j: 0,
       });
-    } else if (searchParams.get('type') === ChatType.CHAT) {
+    } else if (searchParams.get('chat_type') === ChatType.CHAT) {
       dispatch({
         type: 'SEND_NEW_MESSAGE',
         content: state.inputMessage,

@@ -31,6 +31,7 @@ class TextGenerationResponseWithAlt(BaseModel):
 
 
 class ModelConnectionSuccessResponse(BaseModel):
+
     ai_model_name: str
     estimated_ram: float
     estimated_vram: float
@@ -95,6 +96,7 @@ class AIChatRequest(BaseModel):
 @router.websocket("/ws/chat/")
 async def websocket_chat_endpoint(
     websocket: WebSocket,
+    chat_type: str,
     ai_model_id: int,
     quantization: Optional[str] = "float16",
     gguf_file_name: Optional[str] = None,
@@ -106,6 +108,7 @@ async def websocket_chat_endpoint(
     await websocket.accept()
     # Receive onopen info about how to load the model
     await chat_websocket_orchestrator.load(
+        chat_type=chat_type,
         websocket=websocket,
         ai_model_id=ai_model_id,
         quantization=quantization,

@@ -1,7 +1,6 @@
 from typing import Optional, Any, Union, Dict, List
 
 from fastapi import WebSocket
-from pydantic.v1 import validator
 
 from actuosus_ai.ai_interaction.ai_chat_service import AIChatService, ChatMessage
 from pydantic import BaseModel
