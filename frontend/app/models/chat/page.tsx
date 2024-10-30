@@ -93,29 +93,7 @@ const WebSocketComponent = () => {
     quantization: `${searchParams.get('quantization')}`,
     gguf_file_name: `${searchParams.get('gguf_file_name')}`,
   }).toString();
-  // const loading = state.ai_model_name === '';
-  const loading = false;
-  // state.messages = [
-  //   { content: ['hello, I am mario'], source: 'user' },
-  //   {
-  //     content: [
-  //       'hi',
-  //       [
-  //         ['I am', 0.5],
-  //         ['I will', 0.5],
-  //       ],
-  //       [
-  //         ['how', 0.8],
-  //         ['I', -1],
-  //       ],
-  //       '-----------------------------------------------------------------------------------------------------------------------------------------------',
-  //       '--------------------------------------------------------------------------------------------------------',
-  //       '--------------------------------------------------------------------------------------------------------',
-  //     ],
-  //     source: 'ai',
-  //   },
-  //   { content: ['how are you'], source: 'user' },
-  // ];
+  const loading = state.ai_model_name === '';
 
   const memoizedOptions = useMemo(
     () => ({
@@ -129,10 +107,10 @@ const WebSocketComponent = () => {
             });
             break;
           case responseTypeId.NEW_MESSAGE:
+            console.log('received new message', data.payload);
             dispatch({
               type: 'APPEND_TO_LAST_MESSAGE',
-              content: data.content,
-              source: data.source,
+              payload: data.payload,
             });
             break;
           case responseTypeId.NEW_MESSAGE_END:
@@ -176,6 +154,7 @@ const WebSocketComponent = () => {
     (i: number, j: number, word: string) => {
       // Check if the whole words tree up to word is in the trie already
       const slicedMessage = messagesUpTo(state.messages, i, j);
+      slicedMessage.at(-1)!.content.push(word);
       const searchResults = state.trie.searchAndReturn(slicedMessage);
 
       if (searchResults) {
@@ -233,7 +212,7 @@ const WebSocketComponent = () => {
       sendRequest({
         type_id: 0,
         content: state.inputMessage,
-        source: 'ai',
+        source: 'user',
         i: -1,
         j: 0,
       });
@@ -322,23 +301,69 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   onWordPick,
   onRefreshClick,
 }) => {
+  // Map '\n' into a special word
+  const parseMessages = messages.map((message) => {
+    const newContent = message.content
+      .map((item, j) => {
+        if (typeof item === 'string') {
+          return item.split(/(\n)/).map((item) => {
+            return {
+              item: item,
+              index: j,
+            };
+          });
+        } else {
+          const repr = item[0][0];
+          const match = repr.match(/^(\n*)(.*?)(\n*)$/) || [];
+          const [, startNewlines, content, endNewlines] = match;
+          return [
+            ...startNewlines.split('').map((item) => {
+              return {
+                item: item,
+                index: j,
+              };
+            }),
+            {
+              item: item,
+              index: j,
+            },
+            ...endNewlines.split('').map((item) => {
+              return {
+                item: item,
+                index: j,
+              };
+            }),
+          ];
+        }
+      })
+      .flat();
+    return {
+      ...message,
+      content: newContent,
+    };
+  });
+
   return (
     <div className="flex flex-col mr-32 mt-28">
-      {messages.map((message, i) => {
+      {parseMessages.map((message, i) => {
         if (message.source === 'user') {
           return (
             <p
               className="ml-auto bg-background-400 rounded-md p-2 z-10"
               key={i}
             >
-              {message.content[0]}
+              {message.content.map((item) => item.item).join('')}
             </p>
           );
         } else {
           return (
-            <div key={i} className="flex flex-wrap m-20 min-w-32">
+            <div key={i} className="flex flex-wrap mx-20 min-w-32">
               {message.content.map((item, j) => {
-                if (typeof item === 'string') {
+                // New line
+                if (item.item === '\n') {
+                  return <div className="w-full" key={j}></div>;
+                }
+                if (typeof item.item === 'string') {
                   return (
                     <p
                       className="z-10"
@@ -347,7 +372,7 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
                       }}
                       key={j}
                     >
-                      {item}
+                      {item.item}
                     </p>
                   );
                 } else {
@@ -356,20 +381,22 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
                       key={j}
                       dispatch={dispatch}
                       isOpen={
-                        state.openedWord_i === i && state.openedWord_j === j
+                        state.openedWord_i === i &&
+                        state.openedWord_j === item.index
                       }
-                      wordProbList={item}
+                      wordProbList={item.item}
                       onWordClick={() =>
-                        state.openedWord_i === i && state.openedWord_j === j
+                        state.openedWord_i === i &&
+                        state.openedWord_j === item.index
                           ? dispatch({ type: 'SET_OPENED_WORD', i: -1, j: -1 })
                           : dispatch({
                               type: 'SET_OPENED_WORD',
                               i: i,
-                              j: j,
+                              j: item.index,
                             })
                       }
-                      onWordPick={(word) => onWordPick(i, j, word)}
-                      onRefreshClick={() => onRefreshClick(i, j)}
+                      onWordPick={(word) => onWordPick(i, item.index, word)}
+                      onRefreshClick={() => onRefreshClick(i, item.index)}
                     />
                   );
                 }

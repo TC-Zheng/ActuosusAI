@@ -42,8 +42,10 @@ const initialState: baseChatState = {
 export type baseChatAction =
   | {
       type: 'APPEND_TO_LAST_MESSAGE';
-      source: string;
-      content: string | WordProbList;
+      payload: {
+        source: string;
+        content: string | WordProbList;
+      };
     }
   | {
       type: 'SELECT_NEW_WORD_AT';
@@ -115,8 +117,8 @@ const reducer = (
         ...state,
         messages: appendToLastMessage(
           state.messages,
-          action.source,
-          action.content
+          action.payload.source,
+          action.payload.content
         ),
       };
     case 'SELECT_NEW_WORD_AT':
@@ -200,7 +202,7 @@ const reducer = (
         min_prob: action.min_prob,
       };
     case 'INSERT_TRIE':
-      const newTrie = copyObject(state.trie);
+      const newTrie = MessageTrie.deserialize(state.trie.serialize());
       newTrie.insert(state.messages);
       return {
         ...state,

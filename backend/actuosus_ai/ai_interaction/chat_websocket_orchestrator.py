@@ -41,6 +41,24 @@ class RefreshWordRequest(BaseModel):
     i: int
     j: int
 
+class ResponseTypeId:
+    MODEL_INFO = 0
+    NEW_MESSAGE = 1
+    NEW_MESSAGE_END = 2
+    REFRESH_WORD = 3
+
+class ModelInfo(BaseModel):
+    ai_model_name: str
+    estimated_ram: float
+    estimated_vram: float
+
+class NewMessage(BaseModel):
+    source: str
+    content: WordProbList
+
+class ChatResponse(BaseModel):
+    type_id: int
+    payload: None | ModelInfo | NewMessage
 
 class ChatWebSocketOrchestrator:
     def __init__(self, ai_chat_service: AIChatService):
@@ -53,10 +71,6 @@ class ChatWebSocketOrchestrator:
         self.user_role = "user"
         self.ai_role = "assistant"
         self.system_prompt = "You are a helpful assistant"
-
-    # Delegate attribute access to chat service
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self.chat_service, name)
 
     async def load(
         self,
@@ -107,7 +121,30 @@ class ChatWebSocketOrchestrator:
     def convert_for_text_generation(self, messages: List[Message]) -> str:
         return self.flatten_messages(messages[-1]["content"])
 
-    def handle_new_message(self, request: NewMessageRequest) -> None:
+    async def generation(self):
+        # Generate the messages
+        if self.chat_type == ChatType.CHAT:
+            if self.messages[-1]["source"] == self.user_role:
+                self.messages.append({"content": [], "source": self.ai_role})
+            print(self.convert_for_chat(self.messages))
+            for item in self.chat_service.generate_chat_tokens_with_probabilities(
+                messages=self.convert_for_chat(self.messages)
+            ):
+                await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE, payload=NewMessage(source='ai',content=item)).model_dump())
+                self.messages[-1]["content"].append(item)
+
+        elif self.chat_type == ChatType.TEXT_GENERATION:
+            for item in self.text_generation_service.generate_tokens_with_probabilities(
+                prompt=self.convert_for_text_generation(self.messages)
+            ):
+                await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE, payload=NewMessage(source='ai',content=item)).model_dump())
+                self.messages[-1]["content"].append(item)
+
+        # End and save the message
+        await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE_END, payload=None).model_dump())
+        self.trie.insert(self.messages)
+
+    async def handle_new_message(self, request: NewMessageRequest) -> None:
         # append message to messages list
         if request.i == -1:
             self.messages.append(
@@ -118,29 +155,19 @@ class ChatWebSocketOrchestrator:
             self.messages[-1]["content"] = self.messages[-1]["content"][: request.j] + [
                 request.content
             ]
+        await self.generation()
 
-        # Generate the messages
-        if self.chat_type == ChatType.CHAT:
-            if self.messages[-1]["source"] == self.user_role:
-                self.messages.append({"content": [], "source": self.ai_role})
-            for item in self.chat_service.generate_chat_tokens_with_probabilities(
-                messages=self.convert_for_chat(self.messages)
-            ):
-                self.websocket.send_json(item)
-                self.messages[-1]["content"].append(item)
 
-        elif self.chat_type == ChatType.TEXT_GENERATION:
-            for item in self.text_generation_service.generate_tokens_with_probabilities(
-                prompt=self.convert_for_text_generation(self.messages)
-            ):
-                self.websocket.send_json(item)
-                self.messages[-1]["content"].append(item)
-
-        # End and save the message
-        self.websocket.send_json({"end": True})
-        self.trie.insert(self.messages)
-    def handle_select_new_word(self, request: SelectWordRequest) -> None:
-        ...
+    async def handle_select_new_word(self, request: SelectWordRequest) -> None:
+        print(self.messages)
+        print(request.i, request.j)
+        self.messages = self.messages[: request.i + 1]
+        self.messages[-1]["content"] = self.messages[-1]["content"][: request.j] + [
+            request.new_word
+        ]
+        print(self.messages)
+        print(request.i, request.j)
+        await self.generation()
 
     async def run(self) -> None:
         while True:
@@ -148,9 +175,9 @@ class ChatWebSocketOrchestrator:
             request = self._parse_chat_request(data)
             match request.type_id:
                 case 0:
-                    self.handle_new_message(request)
+                    await self.handle_new_message(request)
                 case 1:
-                    self.handle_select_new_word(request)
+                    await self.handle_select_new_word(request)
             # for (
             #         new_tokens_list
             # ) in self.generate_chat_tokens_with_probabilities(

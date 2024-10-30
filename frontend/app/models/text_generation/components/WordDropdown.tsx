@@ -18,6 +18,9 @@ export default function WordDropdown({
   isOpen,
   dispatch,
 }: WordDropdownProps) {
+  if (wordProbList === undefined || wordProbList === null) {
+    return <></>;
+  }
   const formatWordText = (word: [string, number]): string => {
     const [text, value] = word;
 
@@ -44,15 +47,15 @@ export default function WordDropdown({
         <button
           onClick={() => onWordClick()}
           className={
-            'hover:text-primary-400 rounded-md select-text ' +
+            'hover:text-primary-400 rounded-md' +
             (isOpen
-              ? 'text-accent-600'
+              ? ' text-accent-600'
               : wordProbList.length > 1 && wordProbList[1][1] === -1
-                ? 'bg-accent-100'
+                ? ' bg-accent-100'
                 : '')
           }
         >
-          {wordProbList[0][0]}
+          {wordProbList[0][0].replace(/\n/g, '')}
         </button>
         {isOpen && (
           <div className="z-20 absolute bg-background-300 mt-2 w-32 origin-top-right backdrop-blur-md border border-gray-200 divide-y divide-gray-100 rounded-md shadow-lg focus:outline-none flex flex-col">
