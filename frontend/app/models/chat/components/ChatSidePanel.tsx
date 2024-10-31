@@ -115,14 +115,13 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
           type="range"
           min="0.0001"
           max="0.2001"
-          step="0.001"
+          step="0.01"
           value={state.minProb}
           onChange={(e) => {
             dispatch({
               type: 'SET_MIN_PROB',
               minProb: parseFloat(e.target.value),
             });
-            onConfigChange('min_prob', e.target.value);
           }}
           className="flex-grow"
         />
@@ -138,14 +137,13 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
               if (value === '') value = '0'; // Handle empty input
 
               // Convert to a number with two decimal places
-              const formattedValue = (parseInt(value, 10) / 100).toFixed(2);
-
+              let formattedValue = (parseInt(value, 10) / 100).toFixed(2);
+              if (parseFloat(formattedValue) > 99) formattedValue = '99';
               // Update display and state
               dispatch({
                 type: 'SET_MIN_PROB',
                 minProb: parseFloat(formattedValue) / 100,
               });
-              onConfigChange('min_prob', formattedValue);
             }}
             className="ml-2 w-14 text-center bg-background-400"
           />

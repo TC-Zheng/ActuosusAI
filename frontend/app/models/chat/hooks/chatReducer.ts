@@ -210,7 +210,6 @@ const reducer = (
       };
     case 'INSERT_TRIE':
       const newTrie = MessageTrie.deserialize(state.trie.serialize());
-      console.log('newTrie', newTrie);
       newTrie.insert(state.messages);
       return {
         ...state,

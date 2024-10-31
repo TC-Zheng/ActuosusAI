@@ -50,7 +50,6 @@ async def websocket_chat_endpoint(
         get_chat_websocket_orchestrator
     ),
 ) -> None:
-    """Always add an empty {"role": "assistant", "content": ""} at the end of the messages list if the last message is from the user"""
     await websocket.accept()
     # Receive onopen info about how to load the model
     await chat_websocket_orchestrator.load(

@@ -11,7 +11,7 @@ interface WordDropdownProps {
   onRefreshClick: () => void;
   isOpen: boolean;
   dispatch: Dispatch<baseChatAction>;
-  probHeatMap: boolean;
+  heatMapColor: string;
 }
 
 export default function WordDropdown({
@@ -21,7 +21,7 @@ export default function WordDropdown({
   onRefreshClick,
   isOpen,
   dispatch,
-  probHeatMap = true,
+  heatMapColor = '',
 }: WordDropdownProps) {
   if (wordProbList === undefined || wordProbList === null) {
     return <></>;
@@ -44,7 +44,7 @@ export default function WordDropdown({
     const formattedValue =
       percentage < 0.01 ? value.toExponential(2) : `${percentage.toFixed(2)}%`;
 
-    return `${text} ${formattedValue}`;
+    return `${text.replace(/\n/g, '\\n')} ${formattedValue}`;
   };
   const containPreviousSelected =
     wordProbList.length > 1 && wordProbList[1][1] === -1;
@@ -52,16 +52,21 @@ export default function WordDropdown({
   if (wordProbList.length > 1 && wordProbList[0][0] === wordProbList[1][0]) {
     wordProbList = wordProbList.slice(1);
   }
-
   return (
     <>
-      <div className="inline whitespace-pre-wrap relative">
+      <div
+        className={'inline whitespace-pre-wrap relative'}
+        style={{
+          background: heatMapColor,
+          transition: 'background 0.3s ease',
+        }}
+      >
         <button
           onClick={(e) => {
             e.stopPropagation();
             onWordClick();
           }}
-          className={getButtonStyle(isOpen, wordProbList, probHeatMap)}
+          className={getButtonStyle(isOpen, wordProbList)}
         >
           {wordProbList[0][0].replace(/\n/g, '')}
         </button>
@@ -99,53 +104,12 @@ export default function WordDropdown({
   );
 }
 
-const getButtonStyle = (
-  isOpen: boolean,
-  wordProbList: WordProbList,
-  probHeatMap: boolean
-) => {
-  const baseStyle = 'hover:text-primary-400 rounded-md';
+const getButtonStyle = (isOpen: boolean, wordProbList: WordProbList) => {
+  const baseStyle = 'hover:text-primary-400 inline-block block';
   const selectedStyle = isOpen ? ' text-accent-600' : '';
   const previousStyle =
     wordProbList.length > 1 && wordProbList[1][1] === -1
       ? ' border-2 border-accent-500'
       : '';
-  let heatMapStyle = '';
-  if (probHeatMap) {
-    switch (wordProbList.length) {
-      case 1:
-        heatMapStyle = ' text-primary-950 cursor-default'; // Neutral
-        break;
-      case 2:
-        heatMapStyle = ' text-blue-900';
-        break;
-      case 3:
-        heatMapStyle = ' text-blue-800';
-        break;
-      case 4:
-        heatMapStyle = ' text-blue-700';
-        break;
-      case 5:
-        heatMapStyle = ' text-blue-600';
-        break;
-      case 6:
-        heatMapStyle = ' text-yellow-600'; // Start warming up
-        break;
-      case 7:
-        heatMapStyle = ' text-yellow-700';
-        break;
-      case 8:
-        heatMapStyle = ' text-orange-700';
-        break;
-      case 9:
-        heatMapStyle = ' text-orange-800'; // High heat
-        break;
-      case 10:
-        heatMapStyle = ' text-red-700'; // Maximum heat
-        break;
-      default:
-        heatMapStyle = ' text-red-800'; // Exceeding maximum
-    }
-  }
-  return baseStyle + selectedStyle + previousStyle + heatMapStyle;
+  return baseStyle + selectedStyle + previousStyle;
 };

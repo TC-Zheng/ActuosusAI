@@ -78,7 +78,7 @@ class ChatWebSocketOrchestrator:
         self.ai_role = "assistant"
         self.system_prompt = "You are a helpful assistant"
         self.temperature = 1.0
-        self.max_new_tokens = 200
+        self.max_new_tokens = 5000
         self.min_prob = 0.001
 
     async def load(
