@@ -1,5 +1,5 @@
 import { useReducer } from 'react';
-import { MessageTrie } from '@/app/models/hooks/useMessageTrie';
+import MessageTrie from '@/app/models/chat/utils/MessageTrie';
 
 export type WordProbList = [string, number][];
 export enum WordStatus {
@@ -21,7 +21,7 @@ export type baseChatState = {
   estimated_vram: number;
   temperature: number;
   maxNewTokens: number;
-  min_prob: number;
+  minProb: number;
   trie: MessageTrie;
 };
 
@@ -35,7 +35,7 @@ const initialState: baseChatState = {
   estimated_vram: 0,
   temperature: 1,
   maxNewTokens: 100,
-  min_prob: 0.0001,
+  minProb: 0.0001,
   trie: new MessageTrie(),
 };
 
@@ -66,9 +66,11 @@ export type baseChatAction =
     }
   | {
       type: 'REFRESH_WORD_AT';
-      i: number;
-      j: number;
-      wordProbList: WordProbList;
+      payload: {
+        i: number;
+        j: number;
+        content: WordProbList;
+      };
     }
   | {
       type: 'SET_MESSAGES';
@@ -101,7 +103,7 @@ export type baseChatAction =
     }
   | {
       type: 'SET_MIN_PROB';
-      min_prob: number;
+      minProb: number;
     }
   | {
       type: 'INSERT_TRIE';
@@ -123,9 +125,12 @@ const reducer = (
       };
     case 'SELECT_NEW_WORD_AT':
       const newMessage = copyObject(state.messages[action.i]);
-      newMessage.content[action.j] = [
-        [action.newWord, WordStatus.PICKED],
-        [action.prevWord, WordStatus.PREVIOUS],
+      newMessage.content = [
+        ...newMessage.content.slice(0, action.j),
+        [
+          [action.newWord, WordStatus.PICKED],
+          [action.prevWord, WordStatus.PREVIOUS],
+        ],
       ];
       return {
         ...state,
@@ -138,9 +143,9 @@ const reducer = (
         ...state,
         messages: refreshWordAt(
           state.messages,
-          action.i,
-          action.j,
-          action.wordProbList
+          action.payload.i,
+          action.payload.j,
+          action.payload.content
         ),
       };
     case 'RESET_AND_SEND_NEW_MESSAGE':
@@ -167,6 +172,8 @@ const reducer = (
       return {
         ...state,
         messages: action.messages,
+        openedWord_i: -1,
+        openedWord_j: -1,
       };
     case 'SET_INPUT_MESSAGE':
       return {
@@ -199,10 +206,11 @@ const reducer = (
     case 'SET_MIN_PROB':
       return {
         ...state,
-        min_prob: action.min_prob,
+        minProb: action.minProb,
       };
     case 'INSERT_TRIE':
       const newTrie = MessageTrie.deserialize(state.trie.serialize());
+      console.log('newTrie', newTrie);
       newTrie.insert(state.messages);
       return {
         ...state,

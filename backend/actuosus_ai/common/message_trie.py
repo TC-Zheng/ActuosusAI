@@ -54,9 +54,10 @@ class MessageTrie:
         for message in messages:
             for item in message["content"]:
                 repr_val = item[0][0] if isinstance(item, list) else item
-                current.children[repr_val] = MessageTrieNode(
-                    message["source"], item if isinstance(item, list) else []
-                )
+                if repr_val not in current.children:
+                    current.children[repr_val] = MessageTrieNode(
+                        message["source"], item if isinstance(item, list) else []
+                    )
                 current = current.children[repr_val]
 
     def search_and_return(self, messages: List[Message]) -> Optional[List[Message]]:

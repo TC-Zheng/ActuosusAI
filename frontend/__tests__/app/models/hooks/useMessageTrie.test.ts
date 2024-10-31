@@ -1,4 +1,4 @@
-import { MessageTrie } from '@/app/models/hooks/useMessageTrie';
+import { MessageTrie } from '@/app/models/hooks/MessageTrie';
 import { Message, WordProbList } from '@/app/models/hooks/chatReducer';
 
 describe('MessageTrie', () => {

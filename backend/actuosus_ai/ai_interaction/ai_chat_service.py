@@ -48,7 +48,7 @@ class AIChatService:
         self,
         messages: List[ChatMessage],
         max_length: Optional[int] = None,
-        max_new_tokens: int = 10000,
+        max_new_tokens: int = 2000,
         k: int = 10,
         temperature: float = 1.0,
         min_prob: float = 0.001,

@@ -1,3 +1,4 @@
+import copy
 from typing import Optional, Any, Union, Dict, List
 
 from fastapi import WebSocket
@@ -56,9 +57,14 @@ class NewMessage(BaseModel):
     source: str
     content: WordProbList
 
+class WordRefresh(BaseModel):
+    i: int
+    j: int
+    content: WordProbList
+
 class ChatResponse(BaseModel):
     type_id: int
-    payload: None | ModelInfo | NewMessage
+    payload: None | ModelInfo | NewMessage | WordRefresh
 
 class ChatWebSocketOrchestrator:
     def __init__(self, ai_chat_service: AIChatService):
@@ -71,6 +77,9 @@ class ChatWebSocketOrchestrator:
         self.user_role = "user"
         self.ai_role = "assistant"
         self.system_prompt = "You are a helpful assistant"
+        self.temperature = 1.0
+        self.max_new_tokens = 200
+        self.min_prob = 0.001
 
     async def load(
         self,
@@ -128,14 +137,14 @@ class ChatWebSocketOrchestrator:
                 self.messages.append({"content": [], "source": self.ai_role})
             print(self.convert_for_chat(self.messages))
             for item in self.chat_service.generate_chat_tokens_with_probabilities(
-                messages=self.convert_for_chat(self.messages)
+                messages=self.convert_for_chat(self.messages), temperature=self.temperature, max_new_tokens=self.max_new_tokens, min_prob=self.min_prob
             ):
                 await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE, payload=NewMessage(source='ai',content=item)).model_dump())
                 self.messages[-1]["content"].append(item)
 
         elif self.chat_type == ChatType.TEXT_GENERATION:
             for item in self.text_generation_service.generate_tokens_with_probabilities(
-                prompt=self.convert_for_text_generation(self.messages)
+                prompt=self.convert_for_text_generation(self.messages), temperature=self.temperature, max_new_tokens=self.max_new_tokens, min_prob=self.min_prob
             ):
                 await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE, payload=NewMessage(source='ai',content=item)).model_dump())
                 self.messages[-1]["content"].append(item)
@@ -169,6 +178,24 @@ class ChatWebSocketOrchestrator:
         print(request.i, request.j)
         await self.generation()
 
+    async def handle_refresh_word(self, request: RefreshWordRequest) -> None:
+        temp_message = copy.deepcopy(self.messages[: request.i + 1])
+        temp_message[-1]["content"] = temp_message[-1]["content"][: request.j]
+        if self.chat_type == ChatType.CHAT:
+            for item in self.chat_service.generate_chat_tokens_with_probabilities(
+                    messages=self.convert_for_chat(temp_message), max_new_tokens=1, temperature=self.temperature, min_prob=self.min_prob
+            ):
+                await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.REFRESH_WORD,
+                                                            payload=WordRefresh(i=request.i, j=request.j, content=item)).model_dump())
+
+        elif self.chat_type == ChatType.TEXT_GENERATION:
+            for item in self.text_generation_service.generate_tokens_with_probabilities(
+                    prompt=self.convert_for_text_generation(temp_message), max_new_tokens=1, temperature=self.temperature, min_prob=self.min_prob
+            ):
+                await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE,
+                                                            payload=WordRefresh(i=request.i, j=request.j, content=item)).model_dump())
+
+
     async def run(self) -> None:
         while True:
             data = await self.websocket.receive_json()
@@ -178,16 +205,7 @@ class ChatWebSocketOrchestrator:
                     await self.handle_new_message(request)
                 case 1:
                     await self.handle_select_new_word(request)
-            # for (
-            #         new_tokens_list
-            # ) in self.generate_chat_tokens_with_probabilities(
-            #     **data.model_dump(),
-            # ):
-            #     await websocket.send_json(
-            #         TextGenerationResponseWithAlt(
-            #             response=new_tokens_list, end=False
-            #         ).model_dump()
-            #     )
-            # await websocket.send_json(
-            #     TextGenerationResponseWithAlt(response=[], end=True).model_dump()
-            # )
+                case 2:
+                    setattr(self, request.config_name, int(request.config_value) if request.config_value.isdigit() else float(request.config_value))
+                case 3:
+                    await self.handle_refresh_word(request)

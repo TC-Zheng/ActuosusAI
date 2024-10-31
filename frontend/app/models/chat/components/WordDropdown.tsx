@@ -1,5 +1,8 @@
-import { baseChatAction, WordProbList } from '@/app/models/hooks/chatReducer';
 import React, { Dispatch } from 'react';
+import {
+  baseChatAction,
+  WordProbList,
+} from '@/app/models/chat/hooks/chatReducer';
 
 interface WordDropdownProps {
   wordProbList: WordProbList;
@@ -8,6 +11,7 @@ interface WordDropdownProps {
   onRefreshClick: () => void;
   isOpen: boolean;
   dispatch: Dispatch<baseChatAction>;
+  probHeatMap: boolean;
 }
 
 export default function WordDropdown({
@@ -17,15 +21,23 @@ export default function WordDropdown({
   onRefreshClick,
   isOpen,
   dispatch,
+  probHeatMap = true,
 }: WordDropdownProps) {
   if (wordProbList === undefined || wordProbList === null) {
     return <></>;
   }
-  const formatWordText = (word: [string, number]): string => {
+  const formatWordText = (word: [string, number]) => {
     const [text, value] = word;
 
     if (value === -1) {
-      return text + '\nPrevious selected';
+      return (
+        <>
+          {text + '\n'} <span className="text-accent-600">Previous</span>
+        </>
+      );
+    }
+    if (value === -2) {
+      return text;
     }
 
     const percentage = value * 100;
@@ -45,15 +57,11 @@ export default function WordDropdown({
     <>
       <div className="inline whitespace-pre-wrap relative">
         <button
-          onClick={() => onWordClick()}
-          className={
-            'hover:text-primary-400 rounded-md' +
-            (isOpen
-              ? ' text-accent-600'
-              : wordProbList.length > 1 && wordProbList[1][1] === -1
-                ? ' bg-accent-100'
-                : '')
-          }
+          onClick={(e) => {
+            e.stopPropagation();
+            onWordClick();
+          }}
+          className={getButtonStyle(isOpen, wordProbList, probHeatMap)}
         >
           {wordProbList[0][0].replace(/\n/g, '')}
         </button>
@@ -62,7 +70,10 @@ export default function WordDropdown({
             {!containPreviousSelected && (
               <button
                 className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
-                onClick={() => onRefreshClick()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRefreshClick();
+                }}
               >
                 Refresh
               </button>
@@ -71,7 +82,8 @@ export default function WordDropdown({
               <button
                 key={word[0]}
                 className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (word[0] !== wordProbList[0][0]) {
                     onWordPick(word[0]);
                   }
@@ -86,3 +98,54 @@ export default function WordDropdown({
     </>
   );
 }
+
+const getButtonStyle = (
+  isOpen: boolean,
+  wordProbList: WordProbList,
+  probHeatMap: boolean
+) => {
+  const baseStyle = 'hover:text-primary-400 rounded-md';
+  const selectedStyle = isOpen ? ' text-accent-600' : '';
+  const previousStyle =
+    wordProbList.length > 1 && wordProbList[1][1] === -1
+      ? ' border-2 border-accent-500'
+      : '';
+  let heatMapStyle = '';
+  if (probHeatMap) {
+    switch (wordProbList.length) {
+      case 1:
+        heatMapStyle = ' text-primary-950 cursor-default'; // Neutral
+        break;
+      case 2:
+        heatMapStyle = ' text-blue-900';
+        break;
+      case 3:
+        heatMapStyle = ' text-blue-800';
+        break;
+      case 4:
+        heatMapStyle = ' text-blue-700';
+        break;
+      case 5:
+        heatMapStyle = ' text-blue-600';
+        break;
+      case 6:
+        heatMapStyle = ' text-yellow-600'; // Start warming up
+        break;
+      case 7:
+        heatMapStyle = ' text-yellow-700';
+        break;
+      case 8:
+        heatMapStyle = ' text-orange-700';
+        break;
+      case 9:
+        heatMapStyle = ' text-orange-800'; // High heat
+        break;
+      case 10:
+        heatMapStyle = ' text-red-700'; // Maximum heat
+        break;
+      default:
+        heatMapStyle = ' text-red-800'; // Exceeding maximum
+    }
+  }
+  return baseStyle + selectedStyle + previousStyle + heatMapStyle;
+};

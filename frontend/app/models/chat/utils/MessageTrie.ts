@@ -1,5 +1,4 @@
-import { Message, WordProbList } from '@/app/models/hooks/chatReducer';
-import { useCallback, useState } from 'react';
+import { Message, WordProbList } from '@/app/models/chat/hooks/chatReducer';
 
 class MessageTrieNode {
   children: { [key: string]: MessageTrieNode } = {};
@@ -12,7 +11,7 @@ class MessageTrieNode {
   }
 }
 
-export class MessageTrie {
+export default class MessageTrie {
   root: MessageTrieNode;
 
   constructor() {
@@ -34,14 +33,17 @@ export class MessageTrie {
     for (const message of messages) {
       for (const item of message.content) {
         const repr = typeof item === 'string' ? item : item[0][0];
-        current.children[repr] = new MessageTrieNode(
-          message.source,
-          typeof item === 'string' ? [] : item
-        );
+        if (!current.children[repr]) {
+          current.children[repr] = new MessageTrieNode(
+            message.source,
+            typeof item === 'string' ? [] : item
+          );
+        }
         current = current.children[repr];
       }
     }
   }
+
   searchAndReturn(messages: Message[]): Message[] | null {
     // First search for messages in the trie, and return null if not found
     const result: Message[] = [];
@@ -103,33 +105,3 @@ export class MessageTrie {
     this.root = new MessageTrieNode('', []);
   }
 }
-
-function useMessageTrie() {
-  const [trie] = useState(() => new MessageTrie());
-
-  const insertTrie = useCallback(
-    (messages: Message[]) => {
-      return trie.insert(messages);
-    },
-    [trie]
-  );
-
-  const searchAndReturnTrie = useCallback(
-    (messages: Message[]) => {
-      return trie.searchAndReturn(messages);
-    },
-    [trie]
-  );
-
-  const clearTrie = useCallback(() => {
-    trie.clear();
-  }, [trie]);
-
-  return {
-    insertTrie,
-    searchAndReturnTrie,
-    clearTrie,
-  };
-}
-
-export default useMessageTrie;
