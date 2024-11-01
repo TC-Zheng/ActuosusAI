@@ -78,7 +78,7 @@ class ChatWebSocketOrchestrator:
         self.ai_role = "assistant"
         self.system_prompt = "You are a helpful assistant"
         self.temperature = 1.0
-        self.max_new_tokens = 5000
+        self.max_new_tokens = 100
         self.min_prob = 0.001
 
     async def load(
@@ -135,7 +135,6 @@ class ChatWebSocketOrchestrator:
         if self.chat_type == ChatType.CHAT:
             if self.messages[-1]["source"] == self.user_role:
                 self.messages.append({"content": [], "source": self.ai_role})
-            print(self.convert_for_chat(self.messages))
             for item in self.chat_service.generate_chat_tokens_with_probabilities(
                 messages=self.convert_for_chat(self.messages), temperature=self.temperature, max_new_tokens=self.max_new_tokens, min_prob=self.min_prob
             ):
@@ -160,22 +159,23 @@ class ChatWebSocketOrchestrator:
                 {"content": [request.content], "source": request.source}
             )
         else:
-            self.messages = self.messages[: request.i]
-            self.messages[-1]["content"] = self.messages[-1]["content"][: request.j] + [
-                request.content
-            ]
+            self.messages = self.messages[: request.i+1]
+            if not self.messages:
+                self.messages.append(
+                    {"content": [request.content], "source": request.source}
+                )
+            else:
+                self.messages[-1]["content"] = self.messages[-1]["content"][: request.j] + [
+                    request.content
+                ]
         await self.generation()
 
 
     async def handle_select_new_word(self, request: SelectWordRequest) -> None:
-        print(self.messages)
-        print(request.i, request.j)
         self.messages = self.messages[: request.i + 1]
         self.messages[-1]["content"] = self.messages[-1]["content"][: request.j] + [
             request.new_word
         ]
-        print(self.messages)
-        print(request.i, request.j)
         await self.generation()
 
     async def handle_refresh_word(self, request: RefreshWordRequest) -> None:

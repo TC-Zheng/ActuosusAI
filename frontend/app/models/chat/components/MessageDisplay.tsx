@@ -18,19 +18,28 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   onWordPick,
   onRefreshClick,
 }) => {
-  const divRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const prevHeight = useRef(0);
+  const messagesEndRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (divRef.current) {
-      if (prevHeight.current < divRef.current.scrollHeight) {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-      prevHeight.current = divRef.current.scrollHeight;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [state.messages, state.openedWord_i, state.openedWord_j]);
+  }, [state.messages]);
+
+  const handleWordClick = (i: number, j: number) => {
+    if (state.openedWord_i === i && state.openedWord_j === j) {
+      dispatch({
+        type: 'SET_OPENED_WORD',
+        i: -1,
+        j: -1,
+      });
+    } else {
+      dispatch({
+        type: 'SET_OPENED_WORD',
+        i: i,
+        j: j,
+      });
+    }
+  };
 
   return (
     <div
@@ -38,7 +47,6 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
       onClick={() => {
         dispatch({ type: 'SET_OPENED_WORD', i: -1, j: -1 });
       }}
-      ref={divRef}
     >
       {state.messages.map((message, i) => {
         if (message.source === 'user') {
@@ -102,19 +110,7 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
                             state.openedWord_i === i && state.openedWord_j === j
                           }
                           wordProbList={item}
-                          onWordClick={() =>
-                            state.openedWord_i === i && state.openedWord_j === j
-                              ? dispatch({
-                                  type: 'SET_OPENED_WORD',
-                                  i: -1,
-                                  j: -1,
-                                })
-                              : dispatch({
-                                  type: 'SET_OPENED_WORD',
-                                  i: i,
-                                  j: j,
-                                })
-                          }
+                          onWordClick={() => handleWordClick(i, j)}
                           onWordPick={(word) => onWordPick(i, j, word)}
                           onRefreshClick={() => onRefreshClick(i, j)}
                         />
@@ -144,19 +140,7 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
                           state.openedWord_i === i && state.openedWord_j === j
                         }
                         wordProbList={item}
-                        onWordClick={() =>
-                          state.openedWord_i === i && state.openedWord_j === j
-                            ? dispatch({
-                                type: 'SET_OPENED_WORD',
-                                i: -1,
-                                j: -1,
-                              })
-                            : dispatch({
-                                type: 'SET_OPENED_WORD',
-                                i: i,
-                                j: j,
-                              })
-                        }
+                        onWordClick={() => handleWordClick(i, j)}
                         onWordPick={(word) => onWordPick(i, j, word)}
                         onRefreshClick={() => onRefreshClick(i, j)}
                       />
@@ -167,7 +151,11 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
           );
         }
       })}
-      <div ref={messagesEndRef} />
+      {state.messages.length > 1 && (
+        <button ref={messagesEndRef} className="text-secondary-800">
+          Continue Generate
+        </button>
+      )}
     </div>
   );
 };

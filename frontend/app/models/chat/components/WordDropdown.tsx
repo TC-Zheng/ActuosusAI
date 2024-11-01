@@ -1,7 +1,7 @@
-import React, { Dispatch } from 'react';
+import React, { Dispatch, useLayoutEffect, useRef, useState } from 'react';
 import {
   baseChatAction,
-  WordProbList,
+  WordProbList, WordStatus,
 } from '@/app/models/chat/hooks/chatReducer';
 
 interface WordDropdownProps {
@@ -23,20 +23,34 @@ export default function WordDropdown({
   dispatch,
   heatMapColor = '',
 }: WordDropdownProps) {
-  if (wordProbList === undefined || wordProbList === null) {
-    return <></>;
-  }
+  const [isUpward, setIsUpward] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useLayoutEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+
+      // Check if the button is below the middle of the screen
+      if (rect.top > viewportHeight / 2) {
+        setIsUpward(true);
+      } else {
+        setIsUpward(false);
+      }
+    }
+  }, [isOpen]);
+
   const formatWordText = (word: [string, number]) => {
     const [text, value] = word;
 
-    if (value === -1) {
+    if (value === WordStatus.PREVIOUS) {
       return (
         <>
           {text + '\n'} <span className="text-accent-600">Previous</span>
         </>
       );
     }
-    if (value === -2) {
+    if (value === WordStatus.PICKED) {
       return text;
     }
 
@@ -46,12 +60,14 @@ export default function WordDropdown({
 
     return `${text.replace(/\n/g, '\\n')} ${formattedValue}`;
   };
+
   const containPreviousSelected =
     wordProbList.length > 1 && wordProbList[1][1] === -1;
-  // Remove the first element of wordList if it is the same as the second element, this might happen with refresh button
+
   if (wordProbList.length > 1 && wordProbList[0][0] === wordProbList[1][0]) {
     wordProbList = wordProbList.slice(1);
   }
+
   return (
     <>
       <div
@@ -62,6 +78,7 @@ export default function WordDropdown({
         }}
       >
         <button
+          ref={buttonRef}
           onClick={(e) => {
             e.stopPropagation();
             onWordClick();
@@ -71,7 +88,11 @@ export default function WordDropdown({
           {wordProbList[0][0].replace(/\n/g, '')}
         </button>
         {isOpen && (
-          <div className="z-20 absolute bg-background-300 mt-2 w-32 origin-top-right backdrop-blur-md border border-gray-200 divide-y divide-gray-100 rounded-md shadow-lg focus:outline-none flex flex-col">
+          <div
+            className={`z-20 absolute bg-background-300 mt-2 w-32 origin-top-right backdrop-blur-md border border-gray-200 divide-y divide-gray-100 rounded-md shadow-lg focus:outline-none flex flex-col ${
+              isUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+            }`}
+          >
             {!containPreviousSelected && (
               <button
                 className="bg-background-300 cursor-pointer hover:text-secondary-700 rounded-md"

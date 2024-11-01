@@ -3,8 +3,8 @@ import MessageTrie from '@/app/models/chat/utils/MessageTrie';
 
 export type WordProbList = [string, number][];
 export enum WordStatus {
-  PREVIOUS = -1,
-  PICKED = -2,
+  PREVIOUS = 2,
+  PICKED = 3,
 }
 export type Message = {
   content: (WordProbList | string)[];

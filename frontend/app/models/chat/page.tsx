@@ -7,11 +7,7 @@ import useChatReducer, { Message } from '@/app/models/chat/hooks/chatReducer';
 import ChatSidePanel from '@/app/models/chat/components/ChatSidePanel';
 import MessagesDisplay from '@/app/models/chat/components/MessageDisplay';
 import { useDebounce } from '@/app/utils/utils';
-
-export enum ChatType {
-  TEXT_GENERATION = 'text_generation',
-  CHAT = 'chat',
-}
+import { ChatType } from '@/app/models/chat/constants';
 
 type NewMessageRequest = {
   type_id: 0;

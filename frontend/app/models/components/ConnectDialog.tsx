@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import Link from 'next/link';
 import { ModelDetails } from '@/app/models/hooks/customHooks';
-import { ChatType } from '@/app/models/chat/page';
+import { ChatType } from '@/app/models/chat/constants';
 
 type ConnectDialogProps = {
   open: boolean;

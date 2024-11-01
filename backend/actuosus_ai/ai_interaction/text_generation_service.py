@@ -143,13 +143,11 @@ class TextGenerationService:
         min_prob: float,
         is_chat: bool = False,
     ) -> Generator[WordProbList, None, None]:
-        if not is_chat:
-            prompt_tokens = torch.tensor(self.tokenizer.encode(prompt))
-            if max_length:
-                max_new_tokens = max_length - len(prompt_tokens)
-        for _ in self.model.create_completion(
-            prompt, max_tokens=max_new_tokens, stream=True
-        ):
+        prompt_tokens = self.tokenizer.encode(prompt)
+        if max_length:
+            max_new_tokens = max_length - len(prompt_tokens)
+        for _ in range(max_new_tokens):
+            self.model.eval(prompt_tokens)
             logits_ptr = llama_get_logits(self.model.ctx)
             next_token_logits = torch.tensor(
                 np.array(
@@ -165,7 +163,10 @@ class TextGenerationService:
             )
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.model.token_eos():
+                self.model.reset()
                 break
+
+            prompt_tokens = top_k_with_prob[0][0].view(1, 1)
 
             # yield the newly generated line
             yield [
