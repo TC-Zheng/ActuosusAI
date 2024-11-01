@@ -4,6 +4,8 @@ import {
   baseChatState,
 } from '@/app/models/chat/hooks/chatReducer';
 import TooltipWrapper from '@/app/components/TooltipWrapper';
+import ToggleSwitch from '@/app/components/BasicToggle';
+import Link from 'next/link';
 const minProbTooltip =
   'The minimum probability of a word being selected. If the probability of the most likely word is below this value, the model will not select any word.';
 interface ChatSidePanelProps {
@@ -11,6 +13,7 @@ interface ChatSidePanelProps {
   isConnected: boolean;
   dispatch: (action: baseChatAction) => void;
   onConfigChange: (config_name: string, config_value: string) => void;
+  onClearClick: () => void;
 }
 
 const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
@@ -18,26 +21,24 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
   isConnected,
   dispatch,
   onConfigChange,
+  onClearClick,
 }) => {
   return (
-    <div className="flex flex-col bg-background-400 max-w-56 min-w-56 text-center z-10">
-      <button onClick={() => window.history.back()} className="mb-8 mt-2">
+    <div className="flex flex-col bg-background-400 max-w-56 min-w-56 text-center z-10 items-center">
+      <Link
+        href={{
+          pathname: '/models',
+        }}
+        className="mb-8 mt-2"
+      >
         Go Back
-      </button>
-      <h2 className="font-bold text-md text-primary-900">Model name</h2>
+      </Link>
+      <TooltipWrapper
+        tooltipMessage={`RAM usage:\n ${Math.max(0, state.estimated_ram ?? 0).toFixed(2)} GB \n\nVRAM usage: \n${Math.max(0, state.estimated_vram ?? 0).toFixed(2)} GB \n\n Max Context Length: \n${state.maxContextLength}`}
+      >
+        <h2 className="font-bold text-md text-primary-900">Model</h2>
+      </TooltipWrapper>
       <p className="text-primary-700 text-sm">{state.ai_model_name}</p>
-      <h2 className="font-bold text-l text-primary-900">
-        Estimated RAM usage:
-      </h2>
-      <p className="text-primary-700 text-sm">
-        {Math.max(0, state.estimated_ram ?? 0).toFixed(2)} GB
-      </p>
-      <h2 className="font-bold text-md text-primary-900">
-        Estimated VRAM usage:
-      </h2>
-      <p className="text-primary-700 text-sm">
-        {Math.max(0, state.estimated_vram ?? 0).toFixed(2)} GB
-      </p>
       <h2 className="font-bold text-md text-primary-900">Connection Status</h2>
       <p className="text-primary-700 text-sm">
         {isConnected ? 'Connected' : 'Error: Not connected'}
@@ -79,7 +80,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
         <input
           type="range"
           min="1"
-          max="200"
+          max="500"
           value={state.maxNewTokens}
           onChange={(e) => {
             dispatch({
@@ -92,8 +93,6 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
         />
         <input
           type="numeric"
-          min="0.1"
-          max="3"
           value={state.maxNewTokens}
           onChange={(e) => {
             dispatch({
@@ -150,6 +149,31 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
           <span>{'%'}</span>
         </div>
       </div>
+      <TooltipWrapper
+        tooltipMessage={
+          'Create an overlay that uses cold color to indicate less'
+        }
+      >
+        <h2 className="font-bold text-md text-primary-900">
+          Probability Heatmap
+        </h2>
+      </TooltipWrapper>
+      <ToggleSwitch
+        isOn={state.showHeatMap}
+        onClick={() => dispatch({ type: 'TOGGLE_HEATMAP' })}
+      />
+      <button
+        className="mt-auto mb-8 rounded-md bg-primary-500 px-2"
+        onClick={() => {
+          dispatch({
+            type: 'SET_MESSAGES',
+            messages: [],
+          });
+          onClearClick();
+        }}
+      >
+        Clear All
+      </button>
     </div>
   );
 };

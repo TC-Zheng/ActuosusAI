@@ -42,6 +42,9 @@ class RefreshWordRequest(BaseModel):
     i: int
     j: int
 
+class ClearMessagesRequest(BaseModel):
+    type_id: int = 4
+
 class ResponseTypeId:
     MODEL_INFO = 0
     NEW_MESSAGE = 1
@@ -52,6 +55,9 @@ class ModelInfo(BaseModel):
     ai_model_name: str
     estimated_ram: float
     estimated_vram: float
+    max_length: int
+    max_new_tokens: int
+    temperature: float
 
 class NewMessage(BaseModel):
     source: str
@@ -64,7 +70,7 @@ class WordRefresh(BaseModel):
 
 class ChatResponse(BaseModel):
     type_id: int
-    payload: None | ModelInfo | NewMessage | WordRefresh
+    payload: None | ModelInfo | NewMessage | WordRefresh | bool
 
 class ChatWebSocketOrchestrator:
     def __init__(self, ai_chat_service: AIChatService):
@@ -78,7 +84,7 @@ class ChatWebSocketOrchestrator:
         self.ai_role = "assistant"
         self.system_prompt = "You are a helpful assistant"
         self.temperature = 1.0
-        self.max_new_tokens = 100
+        self.max_new_tokens = 300
         self.min_prob = 0.001
 
     async def load(
@@ -97,7 +103,7 @@ class ChatWebSocketOrchestrator:
     def _parse_chat_request(
         json_body: Dict,
     ) -> Union[
-        NewMessageRequest, SelectWordRequest, ChangeConfigRequest, RefreshWordRequest
+        NewMessageRequest, SelectWordRequest, ChangeConfigRequest, RefreshWordRequest, ClearMessagesRequest
     ]:
         type_id = json_body.get("type_id")
 
@@ -109,6 +115,8 @@ class ChatWebSocketOrchestrator:
             return ChangeConfigRequest(**json_body)
         elif type_id == 3:
             return RefreshWordRequest(**json_body)
+        elif type_id == 4:
+            return ClearMessagesRequest(**json_body)
         else:
             raise ValidationException("Invalid type_id")
 
@@ -134,7 +142,7 @@ class ChatWebSocketOrchestrator:
         # Generate the messages
         if self.chat_type == ChatType.CHAT:
             if self.messages[-1]["source"] == self.user_role:
-                self.messages.append({"content": [], "source": self.ai_role})
+                self.messages.append({"content": ['\n\n'], "source": self.ai_role})
             for item in self.chat_service.generate_chat_tokens_with_probabilities(
                 messages=self.convert_for_chat(self.messages), temperature=self.temperature, max_new_tokens=self.max_new_tokens, min_prob=self.min_prob
             ):
@@ -149,25 +157,27 @@ class ChatWebSocketOrchestrator:
                 self.messages[-1]["content"].append(item)
 
         # End and save the message
-        await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE_END, payload=None).model_dump())
+        await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.NEW_MESSAGE_END, payload=self.chat_service.text_generation_service.end_with_eos).model_dump())
         self.trie.insert(self.messages)
 
     async def handle_new_message(self, request: NewMessageRequest) -> None:
         # append message to messages list
         if request.i == -1:
-            self.messages.append(
-                {"content": [request.content], "source": request.source}
-            )
-        else:
-            self.messages = self.messages[: request.i+1]
-            if not self.messages:
+            # -1 means after the last message here
+            if request.content:
                 self.messages.append(
                     {"content": [request.content], "source": request.source}
                 )
-            else:
-                self.messages[-1]["content"] = self.messages[-1]["content"][: request.j] + [
-                    request.content
-                ]
+        else:
+            self.messages = self.messages[: request.i+1]
+            if not self.messages:
+                # When you want to insert a message at the beginning
+                self.messages.append(
+                    {"content": [request.content], "source": request.source}
+                )
+            self.messages[-1]["content"] = self.messages[-1]["content"][: request.j]
+            if request.content:
+                self.messages[-1]["content"].append(request.content)
         await self.generation()
 
 
@@ -209,3 +219,5 @@ class ChatWebSocketOrchestrator:
                     setattr(self, request.config_name, int(request.config_value) if request.config_value.isdigit() else float(request.config_value))
                 case 3:
                     await self.handle_refresh_word(request)
+                case 4:
+                    self.messages = []

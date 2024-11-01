@@ -33,6 +33,8 @@ class TextGenerationService:
         self.gguf = False
         self.estimated_ram = 0.0
         self.estimated_vram = 0.0
+        self.max_length = 8192
+        self.end_with_eos = False
 
     async def load_model(
         self,
@@ -63,6 +65,7 @@ class TextGenerationService:
                 self.model = Llama(
                     model_path=os.path.join(dto.storage_path, gguf_file_name),
                     n_gpu_layers=-1,
+                    n_ctx=0
                 )
                 self.tokenizer = self.model.tokenizer()
                 self.gguf = True
@@ -108,6 +111,9 @@ class TextGenerationService:
 
         if not self.gguf:
             self.device = self.model.device
+            self.max_length = self.tokenizer.model_max_length
+        else:
+            self.max_length = self.model.n_ctx()
         final_ram, final_vram = get_memory_footprint()
         self.estimated_ram = final_ram - initial_ram
         self.estimated_vram = final_vram - initial_vram
@@ -143,6 +149,7 @@ class TextGenerationService:
         min_prob: float,
         is_chat: bool = False,
     ) -> Generator[WordProbList, None, None]:
+        self.model.reset()
         prompt_tokens = self.tokenizer.encode(prompt)
         if max_length:
             max_new_tokens = max_length - len(prompt_tokens)
@@ -163,7 +170,7 @@ class TextGenerationService:
             )
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.model.token_eos():
-                self.model.reset()
+                self.end_with_eos = True
                 break
 
             prompt_tokens = top_k_with_prob[0][0].view(1, 1)
@@ -197,6 +204,7 @@ class TextGenerationService:
             )
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.tokenizer.eos_token_id:
+                self.end_with_eos = True
                 break
 
             # yield the newly generated line
@@ -218,6 +226,7 @@ class TextGenerationService:
         temperature: float = 1.0,
         min_prob: float = 0.001,
     ) -> Generator[WordProbList, None, None]:
+        self.end_with_eos = False
         if self.gguf:
             yield from self.generate_tokens_with_probabilities_gguf(
                 prompt=prompt,

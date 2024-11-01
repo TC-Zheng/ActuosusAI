@@ -22,7 +22,10 @@ export type baseChatState = {
   temperature: number;
   maxNewTokens: number;
   minProb: number;
+  maxContextLength: number;
   trie: MessageTrie;
+  showContinueGenerate: boolean;
+  showHeatMap: boolean;
 };
 
 const initialState: baseChatState = {
@@ -36,7 +39,10 @@ const initialState: baseChatState = {
   temperature: 1,
   maxNewTokens: 100,
   minProb: 0.0001,
+  maxContextLength: 8192,
   trie: new MessageTrie(),
+  showContinueGenerate: false,
+  showHeatMap: false,
 };
 
 export type baseChatAction =
@@ -88,6 +94,9 @@ export type baseChatAction =
   | {
       type: 'SET_MODEL_INFO';
       payload: {
+        max_length: number;
+        temperature: number;
+        max_new_tokens: number;
         ai_model_name: string;
         estimated_ram: number;
         estimated_vram: number;
@@ -106,7 +115,11 @@ export type baseChatAction =
       minProb: number;
     }
   | {
-      type: 'INSERT_TRIE';
+      type: 'MESSAGE_END';
+      payload: boolean; // true if the message ends with eos token
+    }
+  | {
+      type: 'TOGGLE_HEATMAP';
     };
 
 const reducer = (
@@ -192,6 +205,9 @@ const reducer = (
         ai_model_name: action.payload.ai_model_name,
         estimated_ram: action.payload.estimated_ram,
         estimated_vram: action.payload.estimated_vram,
+        maxContextLength: action.payload.max_length,
+        maxNewTokens: action.payload.max_new_tokens,
+        temperature: action.payload.temperature,
       };
     case 'SET_TEMPERATURE':
       return {
@@ -208,12 +224,18 @@ const reducer = (
         ...state,
         minProb: action.minProb,
       };
-    case 'INSERT_TRIE':
+    case 'MESSAGE_END':
       const newTrie = MessageTrie.deserialize(state.trie.serialize());
       newTrie.insert(state.messages);
       return {
         ...state,
         trie: newTrie,
+        showContinueGenerate: !action.payload,
+      };
+    case 'TOGGLE_HEATMAP':
+      return {
+        ...state,
+        showHeatMap: !state.showHeatMap,
       };
     default:
       return state;

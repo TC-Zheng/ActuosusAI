@@ -3,6 +3,7 @@ import gc
 import torch
 from fastapi import APIRouter, WebSocket, Depends, WebSocketDisconnect
 from pydantic import BaseModel
+from sympy.physics.units import temperature
 
 from actuosus_ai.ai_interaction.chat_websocket_orchestrator import (
     ChatWebSocketOrchestrator, ResponseTypeId, ChatResponse, ModelInfo,
@@ -66,6 +67,9 @@ async def websocket_chat_endpoint(
                 ai_model_name=chat_websocket_orchestrator.chat_service.ai_model_name,
                 estimated_ram=chat_websocket_orchestrator.chat_service.estimated_ram,
                 estimated_vram=chat_websocket_orchestrator.chat_service.estimated_vram,
+                max_length=chat_websocket_orchestrator.chat_service.max_length,
+                temperature=chat_websocket_orchestrator.temperature,
+                max_new_tokens=chat_websocket_orchestrator.max_new_tokens,
              )
         ).model_dump()
     )

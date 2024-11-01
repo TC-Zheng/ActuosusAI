@@ -36,11 +36,16 @@ type RefreshWordRequest = {
   j: number;
 };
 
+type ClearMessagesRequest = {
+  type_id: 4;
+};
+
 type ChatRequest =
   | NewMessageRequest
   | SelectWordRequest
   | ChangeConfigRequest
-  | RefreshWordRequest;
+  | RefreshWordRequest
+  | ClearMessagesRequest;
 
 enum responseTypeId {
   MODEL_INFO = 0,
@@ -96,7 +101,8 @@ const WebSocketComponent = () => {
             break;
           case responseTypeId.NEW_MESSAGE_END:
             dispatch({
-              type: 'INSERT_TRIE',
+              type: 'MESSAGE_END',
+              payload: data.payload,
             });
             break;
           case responseTypeId.REFRESH_WORD:
@@ -210,6 +216,7 @@ const WebSocketComponent = () => {
             isConnected={isConnected}
             dispatch={dispatch}
             onConfigChange={handleConfigChange}
+            onClearClick={() => sendRequest({ type_id: 4 })}
           />
           <div className="flex flex-col w-full">
             <MessagesDisplay
@@ -217,6 +224,15 @@ const WebSocketComponent = () => {
               dispatch={dispatch}
               onWordPick={handleWordPick}
               onRefreshClick={handleRefresh}
+              onContinueClick={() =>
+                sendRequest({
+                  type_id: 0,
+                  content: '',
+                  source: 'ai',
+                  i: -1,
+                  j: -1,
+                })
+              }
             />
             <div className="mt-auto w-full flex flex-row p-8 pr-16 relative">
               <textarea

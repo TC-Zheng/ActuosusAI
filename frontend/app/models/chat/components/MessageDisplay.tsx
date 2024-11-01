@@ -10,6 +10,7 @@ interface MessagesDisplayProps {
   dispatch: Dispatch<baseChatAction>;
   onWordPick: (i: number, j: number, word: string) => void;
   onRefreshClick: (i: number, j: number) => void;
+  onContinueClick: () => void;
 }
 
 const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
@@ -17,6 +18,7 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   dispatch,
   onWordPick,
   onRefreshClick,
+  onContinueClick,
 }) => {
   const messagesEndRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -73,7 +75,11 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
                 .flatMap((item, j) => {
                   // Generate the heatmap color based on the probability
                   let heatMapColor = '';
-                  if (typeof item === 'string' || item.length === 1) {
+                  if (
+                    typeof item === 'string' ||
+                    item.length === 1 ||
+                    !state.showHeatMap
+                  ) {
                     heatMapColor = '';
                   } else {
                     const prevItem = message.content[j - 1];
@@ -151,8 +157,8 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
           );
         }
       })}
-      {state.messages.length > 1 && (
-        <button ref={messagesEndRef} className="text-secondary-800">
+      {state.showContinueGenerate && (
+        <button ref={messagesEndRef} className="text-secondary-800" onClick={onContinueClick}>
           Continue Generate
         </button>
       )}

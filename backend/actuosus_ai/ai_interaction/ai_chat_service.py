@@ -28,7 +28,7 @@ class AIChatService:
         )
 
     def _format_chat(self, messages: List[ChatMessage]) -> str:
-        if self.tokenizer.chat_template is not None:
+        if hasattr(self.tokenizer, 'chat_template') and self.tokenizer.chat_template is not None:
             # Use the custom chat template
             return remove_trailing_eot_token(
                 self.tokenizer.apply_chat_template(
@@ -60,22 +60,13 @@ class AIChatService:
                 prompt = parse_jinja2_messages(template, messages)
             else:
                 prompt = self._format_chat(messages)
-            yield from self.text_generation_service.generate_tokens_with_probabilities_gguf(
-                prompt=prompt,
-                max_length=max_length,
-                max_new_tokens=max_new_tokens,
-                k=k,
-                temperature=temperature,
-                min_prob=min_prob,
-                is_chat=True,
-            )
         else:
             prompt = self._format_chat(messages)
-            yield from self.text_generation_service.generate_tokens_with_probabilities_hf(
-                prompt=prompt,
-                max_length=max_length,
-                max_new_tokens=max_new_tokens,
-                k=k,
-                temperature=temperature,
-                min_prob=min_prob,
-            )
+        yield from self.text_generation_service.generate_tokens_with_probabilities(
+            prompt=prompt,
+            max_length=max_length,
+            max_new_tokens=max_new_tokens,
+            k=k,
+            temperature=temperature,
+            min_prob=min_prob,
+        )

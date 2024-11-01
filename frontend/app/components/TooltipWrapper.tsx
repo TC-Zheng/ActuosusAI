@@ -24,9 +24,12 @@ const TooltipWrapper: FC<TooltipWrapperProps> = ({
           ?
         </span>
         {showTooltip && (
-          <div className="absolute top-full mt-1 w-40 bg-primary-400 bg-opacity-75 text-primary-900 text-sm rounded-md p-2 shadow-lg z-10">
+          <p
+            className="absolute top-full mt-1 w-40 bg-primary-400 text-primary-900 text-sm rounded-md p-2 shadow-lg z-10"
+            style={{ whiteSpace: 'pre-wrap' }}
+          >
             {tooltipMessage}
-          </div>
+          </p>
         )}
       </div>
     </div>
