@@ -20,6 +20,8 @@ from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorage
 from actuosus_ai.common.actuosus_exception import NotFoundException, ValidationException
 from actuosus_ai.common.utils import get_memory_footprint
 
+WordProbList = List[Tuple[str, float]]
+
 
 class TextGenerationService:
     def __init__(self, storage_service: AIModelStorageService):
@@ -31,6 +33,8 @@ class TextGenerationService:
         self.gguf = False
         self.estimated_ram = 0.0
         self.estimated_vram = 0.0
+        self.max_length = 8192
+        self.end_with_eos = False
 
     async def load_model(
         self,
@@ -61,6 +65,7 @@ class TextGenerationService:
                 self.model = Llama(
                     model_path=os.path.join(dto.storage_path, gguf_file_name),
                     n_gpu_layers=-1,
+                    n_ctx=0
                 )
                 self.tokenizer = self.model.tokenizer()
                 self.gguf = True
@@ -106,6 +111,9 @@ class TextGenerationService:
 
         if not self.gguf:
             self.device = self.model.device
+            self.max_length = self.tokenizer.model_max_length
+        else:
+            self.max_length = self.model.n_ctx()
         final_ram, final_vram = get_memory_footprint()
         self.estimated_ram = final_ram - initial_ram
         self.estimated_vram = final_vram - initial_vram
@@ -140,14 +148,13 @@ class TextGenerationService:
         temperature: float,
         min_prob: float,
         is_chat: bool = False,
-    ) -> Generator[List[Tuple[str, float]], None, None]:
-        if not is_chat:
-            prompt_tokens = torch.tensor(self.tokenizer.encode(prompt))
-            if max_length:
-                max_new_tokens = max_length - len(prompt_tokens)
-        for _ in self.model.create_completion(
-            prompt, max_tokens=max_new_tokens, stream=True
-        ):
+    ) -> Generator[WordProbList, None, None]:
+        self.model.reset()
+        prompt_tokens = self.tokenizer.encode(prompt)
+        if max_length:
+            max_new_tokens = max_length - len(prompt_tokens)
+        for _ in range(max_new_tokens):
+            self.model.eval(prompt_tokens)
             logits_ptr = llama_get_logits(self.model.ctx)
             next_token_logits = torch.tensor(
                 np.array(
@@ -163,7 +170,10 @@ class TextGenerationService:
             )
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.model.token_eos():
+                self.end_with_eos = True
                 break
+
+            prompt_tokens = top_k_with_prob[0][0].view(1, 1)
 
             # yield the newly generated line
             yield [
@@ -179,7 +189,7 @@ class TextGenerationService:
         k: int,
         temperature: float,
         min_prob: float,
-    ) -> Generator[List[Tuple[str, float]], None, None]:
+    ) -> Generator[WordProbList, None, None]:
         prompt_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.device
         )
@@ -194,6 +204,7 @@ class TextGenerationService:
             )
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.tokenizer.eos_token_id:
+                self.end_with_eos = True
                 break
 
             # yield the newly generated line
@@ -214,7 +225,8 @@ class TextGenerationService:
         k: int = 10,
         temperature: float = 1.0,
         min_prob: float = 0.001,
-    ) -> Generator[List[Tuple[str, float]], None, None]:
+    ) -> Generator[WordProbList, None, None]:
+        self.end_with_eos = False
         if self.gguf:
             yield from self.generate_tokens_with_probabilities_gguf(
                 prompt=prompt,

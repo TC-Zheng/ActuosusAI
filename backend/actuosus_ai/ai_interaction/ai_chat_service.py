@@ -1,7 +1,12 @@
-from typing import Optional, Generator, List, Tuple, Dict, Any
+from typing import Optional, Generator, List, Tuple, Any, TypedDict
 
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
 from actuosus_ai.common.utils import parse_jinja2_messages, remove_trailing_eot_token
+
+
+class ChatMessage(TypedDict):
+    role: str
+    content: str
 
 
 class AIChatService:
@@ -22,8 +27,8 @@ class AIChatService:
             ai_model_id, quantization, gguf_file_name
         )
 
-    def _format_chat(self, messages: List[Dict[str, str]]) -> str:
-        if self.tokenizer.chat_template is not None:
+    def _format_chat(self, messages: List[ChatMessage]) -> str:
+        if hasattr(self.tokenizer, 'chat_template') and self.tokenizer.chat_template is not None:
             # Use the custom chat template
             return remove_trailing_eot_token(
                 self.tokenizer.apply_chat_template(
@@ -41,9 +46,9 @@ class AIChatService:
 
     def generate_chat_tokens_with_probabilities(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[ChatMessage],
         max_length: Optional[int] = None,
-        max_new_tokens: int = 10000,
+        max_new_tokens: int = 2000,
         k: int = 10,
         temperature: float = 1.0,
         min_prob: float = 0.001,
@@ -55,22 +60,13 @@ class AIChatService:
                 prompt = parse_jinja2_messages(template, messages)
             else:
                 prompt = self._format_chat(messages)
-            yield from self.text_generation_service.generate_tokens_with_probabilities_gguf(
-                prompt=prompt,
-                max_length=max_length,
-                max_new_tokens=max_new_tokens,
-                k=k,
-                temperature=temperature,
-                min_prob=min_prob,
-                is_chat=True,
-            )
         else:
             prompt = self._format_chat(messages)
-            yield from self.text_generation_service.generate_tokens_with_probabilities_hf(
-                prompt=prompt,
-                max_length=max_length,
-                max_new_tokens=max_new_tokens,
-                k=k,
-                temperature=temperature,
-                min_prob=min_prob,
-            )
+        yield from self.text_generation_service.generate_tokens_with_probabilities(
+            prompt=prompt,
+            max_length=max_length,
+            max_new_tokens=max_new_tokens,
+            k=k,
+            temperature=temperature,
+            min_prob=min_prob,
+        )
