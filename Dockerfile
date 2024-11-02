@@ -79,6 +79,9 @@ RUN apt-get update && apt-get install -y nodejs npm nginx && \
 # Copy Nginx configuration
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
+# Copy example model
+COPY example_models/ /local_storage
+
 # Expose environment variables
 ENV HOST 0.0.0.0
 ENV FRONTEND_PORT 3000

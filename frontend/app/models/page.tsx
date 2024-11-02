@@ -111,7 +111,7 @@ export default function ModelsPage() {
         ai_model_names={searchResponse?.ai_model_names ?? []}
         onInputChange={handleInputChange}
         onDownloadModelClick={() => {
-          void postDownloadModel({ hf_model_id: selectedSearchName });
+          // void postDownloadModel({ hf_model_id: selectedSearchName });
         }}
         downloadModelLoading={downloadModelLoading}
       />

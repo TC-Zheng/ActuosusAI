@@ -10,21 +10,32 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command:
+      [
+        "poetry",
+        "run",
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+      ]
 
   frontend:
     build:
-      context: ./frontend  # Ensure this is the correct path to your frontend directory
-      dockerfile: Dockerfile  # Your Dockerfile inside the /frontend folder
+      context: ./frontend # Ensure this is the correct path to your frontend directory
+      dockerfile: Dockerfile # Your Dockerfile inside the /frontend folder
     volumes:
       - ./frontend/app:/frontend/app
     ports:
-      - "3000:3000"  # Exposing the frontend on port 3000 (adjust if needed)
+      - "3000:3000" # Exposing the frontend on port 3000 (adjust if needed)
     environment:
-      - NODE_ENV=development  # Example environment variable for Node.js apps
+      - NODE_ENV=development # Example environment variable for Node.js apps
       - PORT=3000
     depends_on:
       - backend_cpu
-#    command: ["sh", "-c", "while :; do sleep 2073600; done"]
+    #    command: ["sh", "-c", "while :; do sleep 2073600; done"]
 
     command: ["npm", "run", "dev"]
