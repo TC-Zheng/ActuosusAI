@@ -135,6 +135,7 @@ const reducer = (
           action.payload.source,
           action.payload.content
         ),
+        showContinueGenerate: false,
       };
     case 'SELECT_NEW_WORD_AT':
       const newMessage = copyObject(state.messages[action.i]);
@@ -150,6 +151,7 @@ const reducer = (
         openedWord_i: -1,
         openedWord_j: -1,
         messages: [...state.messages.slice(0, action.i), newMessage],
+        showContinueGenerate: false,
       };
     case 'REFRESH_WORD_AT':
       return {
@@ -168,6 +170,7 @@ const reducer = (
         openedWord_i: -1,
         openedWord_j: -1,
         inputMessage: '',
+        showContinueGenerate: false,
       };
     case 'SEND_NEW_MESSAGE':
       return {
@@ -180,6 +183,7 @@ const reducer = (
         openedWord_i: -1,
         openedWord_j: -1,
         inputMessage: '',
+        showContinueGenerate: false,
       };
     case 'SET_MESSAGES':
       return {
@@ -187,6 +191,7 @@ const reducer = (
         messages: action.messages,
         openedWord_i: -1,
         openedWord_j: -1,
+        showContinueGenerate: false,
       };
     case 'SET_INPUT_MESSAGE':
       return {
