@@ -8,6 +8,7 @@ import ChatSidePanel from '@/app/models/chat/components/ChatSidePanel';
 import MessagesDisplay from '@/app/models/chat/components/MessageDisplay';
 import { useDebounce } from '@/app/utils/utils';
 import { ChatType } from '@/app/models/chat/constants';
+import { wsURL } from '@/app/utils/constants';
 
 type NewMessageRequest = {
   type_id: 0;
@@ -118,7 +119,7 @@ const WebSocketComponent = () => {
   );
 
   const memoizedUrl = useMemo(
-    () => `ws://127.0.0.1:8000/ws/chat/?${queryString}`,
+    () => `${wsURL}/ws/chat/?${queryString}`,
     [queryString]
   );
 
