@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import useFetch from '@/app/hooks/useFetch';
+import { baseURL } from '@/app/utils/constants';
 
 export type ModelDetails = {
   ai_model_id: number;
@@ -18,7 +19,7 @@ export const useGetModelDetails = () => {
   const { fetchData, response, loading, error } =
     useFetch<GetModelDetailsResponse>();
   const getModelDetails = useCallback(async () => {
-    void fetchData('http://127.0.0.1:8000/models/');
+    void fetchData(`${baseURL}/models/`);
   }, [fetchData]);
 
   return {
@@ -38,7 +39,7 @@ export const usePostCopyModel = () => {
   const { fetchData, response, loading, error } = useFetch<CopyModelResponse>();
   const postCopyModel = useCallback(
     async (ai_model_id: number) => {
-      void fetchData(`http://127.0.0.1:8000/model/${ai_model_id}/copy`, {
+      void fetchData(`${baseURL}/model/${ai_model_id}/copy`, {
         method: 'POST',
       });
     },
@@ -60,7 +61,7 @@ export const useDeleteModel = () => {
     useFetch<DeleteModelResponse>();
   const deleteModel = useCallback(
     async (ai_model_id: number) => {
-      void fetchData(`http://127.0.0.1:8000/model/${ai_model_id}/`, {
+      void fetchData(`${baseURL}/model/${ai_model_id}/`, {
         method: 'DELETE',
       });
     },
@@ -85,7 +86,7 @@ export const useSubmitEditName = () => {
     ai_model_id: number,
     attr: Record<string, string>
   ) => {
-    void fetchData(`http://127.0.0.1:8000/model/${ai_model_id}/`, {
+    void fetchData(`${baseURL}/model/${ai_model_id}/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -113,7 +114,7 @@ export const usePostDownload = () => {
   const { fetchData, response, loading, error } =
     useFetch<DownloadModelResponse>();
   const postDownloadModel = async (payload: DownloadModelPayload) => {
-    void fetchData('http://127.0.0.1:8000/download/hf_lang_model/', {
+    void fetchData('${baseURL}/download/hf_lang_model/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -136,9 +137,7 @@ export const useGetSearchHub = () => {
   const { fetchData, response, loading, error } =
     useFetch<SearchModelResponse>();
   const getSearchHub = async (ai_model_name: string) => {
-    void fetchData(
-      `http://127.0.0.1:8000/huggingface/search/${ai_model_name}/`
-    );
+    void fetchData(`${baseURL}/huggingface/search/${ai_model_name}/`);
   };
   return {
     getSearchHub,
@@ -156,7 +155,7 @@ export const useGetGGUFFileNames = () => {
   const { fetchData, response, loading, error } =
     useFetch<GGUFFileNamesResponse>();
   const getGGUFFileNames = async (ai_model_id: number) => {
-    void fetchData(`http://127.0.0.1:8000/gguf/files/${ai_model_id}/`);
+    void fetchData(`${baseURL}/gguf/files/${ai_model_id}/`);
   };
   return {
     getGGUFFileNames,
