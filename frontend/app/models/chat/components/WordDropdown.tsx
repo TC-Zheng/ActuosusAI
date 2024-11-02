@@ -1,7 +1,8 @@
 import React, { Dispatch, useLayoutEffect, useRef, useState } from 'react';
 import {
   baseChatAction,
-  WordProbList, WordStatus,
+  WordProbList,
+  WordStatus,
 } from '@/app/models/chat/hooks/chatReducer';
 
 interface WordDropdownProps {

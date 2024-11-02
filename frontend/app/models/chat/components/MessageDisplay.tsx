@@ -158,7 +158,11 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
         }
       })}
       {state.showContinueGenerate && (
-        <button ref={messagesEndRef} className="text-secondary-800" onClick={onContinueClick}>
+        <button
+          ref={messagesEndRef}
+          className="text-secondary-800"
+          onClick={onContinueClick}
+        >
           Continue Generate
         </button>
       )}

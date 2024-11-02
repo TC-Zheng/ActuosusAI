@@ -22,5 +22,5 @@ app.add_middleware(
 app.add_middleware(CustomExceptionMiddleware)
 
 if __name__ == "__main__":
-    uvicorn.run(app, port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
     # http://127.0.0.1:8000/docs to see the Swagger UI
