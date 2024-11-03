@@ -41,7 +41,8 @@ COPY backend/pyproject.toml backend/poetry.lock ./
 RUN poetry install -E gpu
 
 # Install llama-cpp-python with CUDA support
-RUN CMAKE_ARGS="-DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS" pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --verbose
+RUN pip install llama-cpp-python \
+  --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124 --force-reinstall --upgrade --no-cache-dir --verbose
 
 # Copy the rest of the backend project
 COPY backend/ ./
