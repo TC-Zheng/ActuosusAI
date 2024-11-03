@@ -14,9 +14,8 @@
 
 ## Features
 - **Download and manage models** from Hugging Face.
-- **Support for GGUF models** and load models in up to **4-bit quantization**.
-- **Chat interface** that supports alternative tokens.
-- Model interaction is simple and efficient.
+- **Support for GGUF models** and load models in up to **4-bit quantization** on GPU.
+- **Chat interface** that let you explore alternative paths the AI could take.
 
 ## Installation Guide
 
