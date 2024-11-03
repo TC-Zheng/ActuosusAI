@@ -63,7 +63,7 @@ export default function WordDropdown({
   };
 
   const containPreviousSelected =
-    wordProbList.length > 1 && wordProbList[1][1] === -1;
+    wordProbList.length > 1 && wordProbList[1][1] === WordStatus.PREVIOUS;
 
   if (wordProbList.length > 1 && wordProbList[0][0] === wordProbList[1][0]) {
     wordProbList = wordProbList.slice(1);
@@ -130,7 +130,7 @@ const getButtonStyle = (isOpen: boolean, wordProbList: WordProbList) => {
   const baseStyle = 'hover:text-primary-400 inline-block block';
   const selectedStyle = isOpen ? ' text-accent-600' : '';
   const previousStyle =
-    wordProbList.length > 1 && wordProbList[1][1] === -1
+    wordProbList.length > 1 && wordProbList[1][1] === WordStatus.PREVIOUS
       ? ' border-2 border-accent-500'
       : '';
   return baseStyle + selectedStyle + previousStyle;

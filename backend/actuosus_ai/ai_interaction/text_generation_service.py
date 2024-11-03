@@ -202,6 +202,10 @@ class TextGenerationService:
             top_k_with_prob = self._generate_top_k_token_with_prob(
                 next_token_logits, k=k, temperature=temperature, min_prob=min_prob
             )
+            # Process output
+            del outputs
+            torch.cuda.empty_cache()
+
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.tokenizer.eos_token_id:
                 self.end_with_eos = True

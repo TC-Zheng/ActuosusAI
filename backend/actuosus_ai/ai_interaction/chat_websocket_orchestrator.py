@@ -142,7 +142,7 @@ class ChatWebSocketOrchestrator:
         # Generate the messages
         if self.chat_type == ChatType.CHAT:
             if self.messages[-1]["source"] == self.user_role:
-                self.messages.append({"content": ['\n\n'], "source": self.ai_role})
+                self.messages.append({"content": [], "source": self.ai_role})
             for item in self.chat_service.generate_chat_tokens_with_probabilities(
                 messages=self.convert_for_chat(self.messages), temperature=self.temperature, max_new_tokens=self.max_new_tokens, min_prob=self.min_prob
             ):

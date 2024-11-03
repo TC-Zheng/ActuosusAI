@@ -151,7 +151,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
       </div>
       <TooltipWrapper
         tooltipMessage={
-          'Create an overlay that uses cold color to indicate less'
+          'Create an overlay that uses hotter color to indicate more alternative words (AI being less certain) based on the minimum probability.'
         }
       >
         <h2 className="font-bold text-md text-primary-900">
