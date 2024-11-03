@@ -20,7 +20,7 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   onRefreshClick,
   onContinueClick,
 }) => {
-  const messagesEndRef = useRef<HTMLButtonElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -54,7 +54,7 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
         if (message.source === 'user') {
           return (
             <div className="ml-auto" key={i}>
-              <p className="mr-16 ml-32 bg-background-400 rounded-md p-2 z-10 whitespace-pre-wrap">
+              <p className="mr-16 ml-32 mt-8 bg-background-400 rounded-md p-2 z-10 whitespace-pre-wrap">
                 {message.content[0]}
               </p>
             </div>
@@ -158,14 +158,11 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
         }
       })}
       {state.showContinueGenerate && (
-        <button
-          ref={messagesEndRef}
-          className="text-secondary-800"
-          onClick={onContinueClick}
-        >
+        <button className="text-secondary-800" onClick={onContinueClick}>
           Continue Generate
         </button>
       )}
+      <div ref={messagesEndRef} />
     </div>
   );
 };

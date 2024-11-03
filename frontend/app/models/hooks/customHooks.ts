@@ -114,7 +114,7 @@ export const usePostDownload = () => {
   const { fetchData, response, loading, error } =
     useFetch<DownloadModelResponse>();
   const postDownloadModel = async (payload: DownloadModelPayload) => {
-    void fetchData('${baseURL}/download/hf_lang_model/', {
+    void fetchData(`${baseURL}/download/hf_lang_model/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

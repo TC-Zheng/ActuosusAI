@@ -38,7 +38,7 @@ const initialState: baseChatState = {
   estimated_vram: 0,
   temperature: 1,
   maxNewTokens: 100,
-  minProb: 0.0001,
+  minProb: 0.01,
   maxContextLength: 8192,
   trie: new MessageTrie(),
   showContinueGenerate: false,

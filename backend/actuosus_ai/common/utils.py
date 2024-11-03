@@ -77,8 +77,5 @@ env = Environment(loader=BaseLoader())
 
 
 def parse_jinja2_messages(jinja2_template: str, messages: List[Dict[str, str]]) -> str:
-    try:
-        template = env.from_string(jinja2_template)
-        return remove_trailing_eot_token(template.render({"messages": messages}))
-    except TemplateSyntaxError as e:
-        return f"Template error: {str(e)}"
+    template = env.from_string(jinja2_template)
+    return remove_trailing_eot_token(template.render({"messages": messages}))

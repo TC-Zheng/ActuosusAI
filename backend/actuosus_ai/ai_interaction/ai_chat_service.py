@@ -57,7 +57,10 @@ class AIChatService:
             # Check if the model has a jinja2 chat template
             if "tokenizer.chat_template" in self.model.metadata:
                 template = self.model.metadata["tokenizer.chat_template"]
-                prompt = parse_jinja2_messages(template, messages)
+                try:
+                    prompt = parse_jinja2_messages(template, messages)
+                except Exception:
+                    prompt = self._format_chat(messages)
             else:
                 prompt = self._format_chat(messages)
         else:
