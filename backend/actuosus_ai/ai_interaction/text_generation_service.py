@@ -132,11 +132,14 @@ class TextGenerationService:
         samples = torch.multinomial(probabilities, num_samples=k)
         selected_probabilities = [prob.item() for prob in probabilities[0, samples][0]]
 
-        top_k_with_prob = sorted(
-            zip(samples[0], [prob for prob in selected_probabilities if prob > 0]),
+        # Leave the first element as is, sort the rest by probability so that the answer is more varied
+        first_element = samples[0][0], selected_probabilities[0]
+        remaining_elements = sorted(
+            zip(samples[0][1:], [prob for prob in selected_probabilities[1:] if prob > 0]),
             key=lambda x: x[1],
             reverse=True,
         )
+        top_k_with_prob = [first_element] + remaining_elements
         return top_k_with_prob
 
     def generate_tokens_with_probabilities_gguf(
