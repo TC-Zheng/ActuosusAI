@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import useChatReducer, { Message } from '@/app/models/chat/hooks/chatReducer';
 import ChatSidePanel from '@/app/models/chat/components/ChatSidePanel';
 import MessagesDisplay from '@/app/models/chat/components/MessageDisplay';
-import { useDebounce } from '@/app/utils/utils';
+import { error_toast, useDebounce } from '@/app/utils/utils';
 import { ChatType } from '@/app/models/chat/constants';
 import { wsURL } from '@/app/utils/constants';
 
@@ -49,6 +49,7 @@ type ChatRequest =
   | ClearMessagesRequest;
 
 enum responseTypeId {
+  ERROR = -1,
   MODEL_INFO = 0,
   NEW_MESSAGE = 1,
   NEW_MESSAGE_END = 2,
@@ -88,6 +89,9 @@ const WebSocketComponent = () => {
       onMessage: (message: MessageEvent) => {
         const data = JSON.parse(message.data);
         switch (data.type_id) {
+          case responseTypeId.ERROR:
+            error_toast(data.payload);
+            break;
           case responseTypeId.MODEL_INFO:
             dispatch({
               type: 'SET_MODEL_INFO',

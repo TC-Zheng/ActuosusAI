@@ -7,7 +7,7 @@ from actuosus_ai.ai_interaction.ai_chat_service import AIChatService, ChatMessag
 from pydantic import BaseModel
 
 from actuosus_ai.ai_interaction.text_generation_service import WordProbList
-from actuosus_ai.common.actuosus_exception import ValidationException
+from actuosus_ai.common.actuosus_exception import ValidationException, ActuosusException
 from actuosus_ai.common.message_trie import MessageTrie, Message
 
 from enum import Enum
@@ -16,7 +16,6 @@ from enum import Enum
 class ChatType(Enum):
     TEXT_GENERATION = "text_generation"
     CHAT = "chat"
-
 
 class NewMessageRequest(BaseModel):
     type_id: int = 0
@@ -46,6 +45,7 @@ class ClearMessagesRequest(BaseModel):
     type_id: int = 4
 
 class ResponseTypeId:
+    ERROR = -1
     MODEL_INFO = 0
     NEW_MESSAGE = 1
     NEW_MESSAGE_END = 2
@@ -70,7 +70,7 @@ class WordRefresh(BaseModel):
 
 class ChatResponse(BaseModel):
     type_id: int
-    payload: None | ModelInfo | NewMessage | WordRefresh | bool
+    payload: None | ModelInfo | NewMessage | WordRefresh | bool | str
 
 class ChatWebSocketOrchestrator:
     def __init__(self, ai_chat_service: AIChatService):
@@ -210,14 +210,18 @@ class ChatWebSocketOrchestrator:
         while True:
             data = await self.websocket.receive_json()
             request = self._parse_chat_request(data)
-            match request.type_id:
-                case 0:
-                    await self.handle_new_message(request)
-                case 1:
-                    await self.handle_select_new_word(request)
-                case 2:
-                    setattr(self, request.config_name, int(request.config_value) if request.config_value.isdigit() else float(request.config_value))
-                case 3:
-                    await self.handle_refresh_word(request)
-                case 4:
-                    self.messages = []
+            try:
+                match request.type_id:
+                    case 0:
+                        await self.handle_new_message(request)
+                    case 1:
+                        await self.handle_select_new_word(request)
+                    case 2:
+                        setattr(self, request.config_name, int(request.config_value) if request.config_value.isdigit() else float(request.config_value))
+                    case 3:
+                        await self.handle_refresh_word(request)
+                    case 4:
+                        self.messages = []
+
+            except Exception as e:
+                await self.websocket.send_json(ChatResponse(type_id=ResponseTypeId.ERROR, payload=str(e)).model_dump())

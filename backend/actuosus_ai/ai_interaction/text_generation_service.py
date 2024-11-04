@@ -17,7 +17,7 @@ except ImportError:
 import numpy as np
 
 from actuosus_ai.ai_model_manager.ai_model_storage_service import AIModelStorageService
-from actuosus_ai.common.actuosus_exception import NotFoundException, ValidationException
+from actuosus_ai.common.actuosus_exception import NotFoundException, ValidationException, InternalException
 from actuosus_ai.common.utils import get_memory_footprint
 
 WordProbList = List[Tuple[str, float]]
@@ -127,6 +127,9 @@ class TextGenerationService:
         probabilities = torch.where(
             probabilities > min_prob, probabilities, torch.tensor(0.0)
         )
+
+        if probabilities.sum() == 0:
+            raise InternalException("All probabilities are below the minimum threshold 0.01%, please reduce the temperature")
 
         # Sample from the filtered probabilities
         samples = torch.multinomial(probabilities, num_samples=k)

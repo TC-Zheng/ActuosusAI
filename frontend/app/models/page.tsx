@@ -105,16 +105,6 @@ export default function ModelsPage() {
   return (
     <>
       <h1 className="text-2xl text-center mt-10">Download Model</h1>
-      <SearchDownloadComboBox
-        selectedSearchName={selectedSearchName}
-        setSelectedSearchName={setSelectedSearchName}
-        ai_model_names={searchResponse?.ai_model_names ?? []}
-        onInputChange={handleInputChange}
-        onDownloadModelClick={() => {
-          void postDownloadModel({ hf_model_id: selectedSearchName });
-        }}
-        downloadModelLoading={downloadModelLoading}
-      />
       {modelDetailsLoading && <Loader />}
       {!modelDetailsLoading && (
         <>
