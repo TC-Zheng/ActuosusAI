@@ -164,13 +164,7 @@ const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
       />
       <button
         className="mt-auto mb-8 rounded-md bg-primary-500 px-2"
-        onClick={() => {
-          dispatch({
-            type: 'SET_MESSAGES',
-            messages: [],
-          });
-          onClearClick();
-        }}
+        onClick={onClearClick}
       >
         Clear All
       </button>

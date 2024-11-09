@@ -41,12 +41,17 @@ type ClearMessagesRequest = {
   type_id: 4;
 };
 
+type StopGenerationRequest = {
+  type_id: 5;
+};
+
 type ChatRequest =
   | NewMessageRequest
   | SelectWordRequest
   | ChangeConfigRequest
   | RefreshWordRequest
-  | ClearMessagesRequest;
+  | ClearMessagesRequest
+  | StopGenerationRequest;
 
 enum responseTypeId {
   ERROR = -1,
@@ -149,6 +154,8 @@ const WebSocketComponent = () => {
   );
 
   const handleWordPick = (i: number, j: number, word: string) => {
+    // Do nothing if already generating
+    if (state.isGenerating) return;
     // Check if the whole words tree up to word is in the trie already
     const slicedMessage = messagesUpTo(state.messages, i, j - 1);
     slicedMessage.at(-1)!.content.push(word);
@@ -178,10 +185,14 @@ const WebSocketComponent = () => {
   };
 
   const handleRefresh = (i: number, j: number) => {
+    // Do nothing if already generating
+    if (state.isGenerating) return;
     sendRequest({ type_id: 3, i: i, j: j } as RefreshWordRequest);
   };
 
   const onSendClick = () => {
+    // Do nothing if already generating
+    if (state.isGenerating) return;
     if (searchParams.get('chat_type') === ChatType.TEXT_GENERATION) {
       dispatch({
         type: 'RESET_AND_SEND_NEW_MESSAGE',
@@ -221,7 +232,18 @@ const WebSocketComponent = () => {
             isConnected={isConnected}
             dispatch={dispatch}
             onConfigChange={handleConfigChange}
-            onClearClick={() => sendRequest({ type_id: 4 })}
+            onClearClick={() => {
+              // Stop generation
+              sendRequest({ type_id: 5 });
+              // Clear messages
+              setTimeout(() => {
+                sendRequest({ type_id: 4 });
+                dispatch({
+                  type: 'SET_MESSAGES',
+                  messages: [],
+                });
+              }, 200);
+            }}
           />
           <div className="flex flex-col w-full">
             <MessagesDisplay
@@ -229,17 +251,26 @@ const WebSocketComponent = () => {
               dispatch={dispatch}
               onWordPick={handleWordPick}
               onRefreshClick={handleRefresh}
-              onContinueClick={() =>
+              onContinueClick={() => {
+                dispatch({ type: 'SET_IS_GENERATING', isGenerating: true });
                 sendRequest({
                   type_id: 0,
                   content: '',
                   source: 'ai',
                   i: -1,
                   j: -1,
-                })
-              }
+                });
+              }}
             />
             <div className="mt-auto w-full flex flex-row p-8 pr-16 relative">
+              {state.isGenerating && (
+                <button
+                  onClick={() => sendRequest({ type_id: 5 })}
+                  className="text-error-600"
+                >
+                  Stop
+                </button>
+              )}
               <textarea
                 ref={textAreaRef}
                 value={state.inputMessage}

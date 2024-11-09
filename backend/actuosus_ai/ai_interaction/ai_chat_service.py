@@ -1,3 +1,4 @@
+from asyncio import Event
 from typing import Optional, Generator, List, Tuple, Any, TypedDict
 
 from actuosus_ai.ai_interaction.text_generation_service import TextGenerationService
@@ -52,6 +53,7 @@ class AIChatService:
         k: int = 10,
         temperature: float = 1.0,
         min_prob: float = 0.001,
+        stop_event: Optional[Event] = None,
     ) -> Generator[List[Tuple[str, float]], None, None]:
         if self.gguf:
             # Check if the model has a jinja2 chat template
@@ -72,4 +74,5 @@ class AIChatService:
             k=k,
             temperature=temperature,
             min_prob=min_prob,
+            stop_event=stop_event,
         )
