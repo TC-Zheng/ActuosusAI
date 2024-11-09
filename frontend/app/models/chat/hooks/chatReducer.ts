@@ -26,6 +26,7 @@ export type baseChatState = {
   trie: MessageTrie;
   showContinueGenerate: boolean;
   showHeatMap: boolean;
+  isGenerating: boolean;
 };
 
 const initialState: baseChatState = {
@@ -43,6 +44,7 @@ const initialState: baseChatState = {
   trie: new MessageTrie(),
   showContinueGenerate: false,
   showHeatMap: false,
+  isGenerating: false,
 };
 
 export type baseChatAction =
@@ -120,7 +122,8 @@ export type baseChatAction =
     }
   | {
       type: 'TOGGLE_HEATMAP';
-    };
+    }
+  | { type: 'SET_IS_GENERATING'; isGenerating: boolean };
 
 const reducer = (
   state: baseChatState,
@@ -152,6 +155,7 @@ const reducer = (
         openedWord_j: -1,
         messages: [...state.messages.slice(0, action.i), newMessage],
         showContinueGenerate: false,
+        isGenerating: true,
       };
     case 'REFRESH_WORD_AT':
       return {
@@ -171,6 +175,7 @@ const reducer = (
         openedWord_j: -1,
         inputMessage: '',
         showContinueGenerate: false,
+        isGenerating: true,
       };
     case 'SEND_NEW_MESSAGE':
       return {
@@ -184,6 +189,7 @@ const reducer = (
         openedWord_j: -1,
         inputMessage: '',
         showContinueGenerate: false,
+        isGenerating: true,
       };
     case 'SET_MESSAGES':
       return {
@@ -235,12 +241,18 @@ const reducer = (
       return {
         ...state,
         trie: newTrie,
+        isGenerating: false,
         showContinueGenerate: !action.payload,
       };
     case 'TOGGLE_HEATMAP':
       return {
         ...state,
         showHeatMap: !state.showHeatMap,
+      };
+    case 'SET_IS_GENERATING':
+      return {
+        ...state,
+        isGenerating: action.isGenerating,
       };
     default:
       return state;

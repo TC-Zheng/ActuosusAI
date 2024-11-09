@@ -25,7 +25,7 @@ const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [state.messages]);
+  }, [state.messages, state.showContinueGenerate]);
 
   const handleWordClick = (i: number, j: number) => {
     if (state.openedWord_i === i && state.openedWord_j === j) {

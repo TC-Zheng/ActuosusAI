@@ -1,4 +1,5 @@
 import os
+from asyncio import Event
 from typing import Tuple, List, Optional, Any, Generator, Dict
 
 import torch
@@ -153,7 +154,7 @@ class TextGenerationService:
         k: int,
         temperature: float,
         min_prob: float,
-        is_chat: bool = False,
+        stop_event: Optional[Event] = None,
     ) -> Generator[WordProbList, None, None]:
         self.model.reset()
         prompt_tokens = self.tokenizer.encode(prompt)
@@ -174,6 +175,10 @@ class TextGenerationService:
             top_k_with_prob = self._generate_top_k_token_with_prob(
                 next_token_logits, k=k, temperature=temperature, min_prob=min_prob
             )
+            # Check for stop event
+            if stop_event and stop_event.is_set():
+                break
+
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.model.token_eos():
                 self.end_with_eos = True
@@ -195,6 +200,7 @@ class TextGenerationService:
         k: int,
         temperature: float,
         min_prob: float,
+        stop_event: Optional[Event] = None,
     ) -> Generator[WordProbList, None, None]:
         prompt_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
             self.device
@@ -211,6 +217,10 @@ class TextGenerationService:
             # Process output
             del outputs
             torch.cuda.empty_cache()
+
+            # Check for stop event
+            if stop_event and stop_event.is_set():
+                break
 
             # Check for eos token
             if top_k_with_prob[0][0].item() == self.tokenizer.eos_token_id:
@@ -235,6 +245,7 @@ class TextGenerationService:
         k: int = 10,
         temperature: float = 1.0,
         min_prob: float = 0.001,
+        stop_event: Optional[Event] = None,
     ) -> Generator[WordProbList, None, None]:
         self.end_with_eos = False
         if self.gguf:
@@ -245,6 +256,7 @@ class TextGenerationService:
                 k=k,
                 temperature=temperature,
                 min_prob=min_prob,
+                stop_event=stop_event,
             )
         else:
             yield from self.generate_tokens_with_probabilities_hf(
@@ -254,4 +266,5 @@ class TextGenerationService:
                 k=k,
                 temperature=temperature,
                 min_prob=min_prob,
+                stop_event=stop_event,
             )
