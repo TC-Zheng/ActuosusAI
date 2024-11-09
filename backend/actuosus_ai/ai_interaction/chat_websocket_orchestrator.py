@@ -240,7 +240,7 @@ class ChatWebSocketOrchestrator:
                     case 2:
                         setattr(self, request.config_name, int(request.config_value) if request.config_value.isdigit() else float(request.config_value))
                     case 3:
-                        current_task = asyncio.create_task(self.handle_refresh_word(request))
+                        await self.handle_refresh_word(request)
                     case 4:
                         self.messages = []
                     case 5:
