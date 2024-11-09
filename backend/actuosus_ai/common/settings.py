@@ -20,6 +20,7 @@ settings = Settings()  # type: ignore
 try:
     login(settings.huggingface_token)
 except ValueError:
+    print(f"Login failed for token {settings.huggingface_token}")
     pass
 
 
